@@ -15,34 +15,59 @@
 package cli
 
 import (
-	//	"fmt"
 	"avt/cli/vm"
+	"avt/libvirt"
+	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
-func vmCommand() *cobra.Command {
-	command := &cobra.Command{
-		Use:   "vm",
-		Short: "Manage VMs",
-		Long:  "Manage virtual machines",
-		/*	Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Im in baby")
-		},*/
-	}
-	command.AddCommand(cli.NewCmdVm())
-	return command
+var completionCmd = &cobra.Command{
+	Use:   "completion",
+	Short: "Generates bash completion scripts",
+	Long: `To load completion run
+
+			. <(bitbucket completion)
+
+			To configure your bash shell to load completions for each session add to your bashrc
+
+			# ~/.bashrc or ~/.profile
+			. <(bitbucket completion)
+			`,
+	Run: func(cmd *cobra.Command, args []string) {
+		rootCmd.GenBashCompletion(os.Stdout)
+		rootCmd.GenZshCompletion(os.Stdout)
+	},
 }
 
 func init() {
-	rootCmd.AddCommand(vmCommand())
+	c := libvirt.NewConnection("qemu:///system", "libvirt")
+	libvirt.C = c
+	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(vm.NewCmdListVM())
+	rootCmd.AddCommand(vm.NewCmdStartVM())
+	rootCmd.AddCommand(vm.NewCmdStopVM())
+	rootCmd.AddCommand(vm.NewCmdPoweroffVM())
+	rootCmd.AddCommand(vm.NewCmdNewVM())
+}
 
-	// Here you will define your flags and configuration settings.
+var rootCmd = &cobra.Command{
+	Use:   "avt",
+	Short: "A brief description of your application",
+	Long: `A longer description that spans multiple lines and likely contains
+examples and usage of using your application. For example:
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// vmCmd.PersistentFlags().String("foo", "", "A help for foo")
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
+}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// vmCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+// Execute adds all child commands to the root command and sets flags appropriately.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
