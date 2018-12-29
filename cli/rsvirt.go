@@ -37,7 +37,6 @@ var completionCmd = &cobra.Command{
 			`,
 	Run: func(cmd *cobra.Command, args []string) {
 		rootCmd.GenBashCompletion(os.Stdout)
-		rootCmd.GenZshCompletion(os.Stdout)
 	},
 }
 
