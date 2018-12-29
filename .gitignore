@@ -1,2 +1,5 @@
 vendor
+rsvirt
+*.qcow
+*.img
 setenv.sh

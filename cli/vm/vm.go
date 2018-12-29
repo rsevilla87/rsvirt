@@ -1,9 +1,12 @@
 package vm
 
 import (
-	"avt/libvirt"
 	"fmt"
 	"os"
+	rsvirt "rsvirt/libvirt"
+
+	libvirt "github.com/libvirt/libvirt-go"
+
 	"sort"
 
 	"github.com/olekukonko/tablewriter"
@@ -13,7 +16,27 @@ import (
 type virtInfo struct {
 	domains []string
 	nets    []string
-	pools   []string
+	pools   []libvirt.StoragePool
+}
+
+var VirtInfo virtInfo
+
+type Disk struct {
+	BaseImage   string
+	PoolName    string
+	Pool        libvirt.StoragePool
+	Path        string
+	Device      string
+	Format      string
+	VirtualSize int
+}
+
+type VM struct {
+	Name       string
+	Cpus       int
+	Memory     int
+	Interfaces *[]string
+	Disks      []Disk
 }
 
 func NewCmdListVM() *cobra.Command {
@@ -22,7 +45,7 @@ func NewCmdListVM() *cobra.Command {
 		Long: "List Virtual Machines",
 		Run: func(cmd *cobra.Command, args []string) {
 			var keys []string
-			domMap := libvirt.List()
+			domMap := rsvirt.List()
 			for k := range domMap {
 				keys = append(keys, k)
 			}
@@ -46,10 +69,10 @@ func NewCmdStartVM() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
 				for _, d := range args {
-					libvirt.Start(d)
+					rsvirt.Start(d)
 				}
 			} else {
-				genericError("VM names not specified")
+				GenericError("VM names not specified")
 			}
 		},
 	}
@@ -63,10 +86,10 @@ func NewCmdStopVM() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
 				for _, d := range args {
-					libvirt.Stop(d, false)
+					rsvirt.Stop(d, false)
 				}
 			} else {
-				genericError("VM names not specified")
+				GenericError("VM names not specified")
 			}
 		},
 	}
@@ -80,77 +103,68 @@ func NewCmdPoweroffVM() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
 				for _, d := range args {
-					libvirt.Stop(d, true)
+					rsvirt.Stop(d, true)
 				}
 			} else {
-				genericError("VM names not specified")
+				GenericError("VM names not specified")
 			}
 		},
 	}
 	return cmd
 }
 
-// Creates a new libvirt domain
+// NewCmddeleteVM Deletes libvirt domains
+func NewCmddeleteVM() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:  "delete",
+		Long: "Delete Virtual Machines",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) > 0 {
+				for _, d := range args {
+					rsvirt.Delete(d)
+				}
+			} else {
+				GenericError("VM names not specified")
+			}
+		},
+	}
+	return cmd
+}
+
+// NewCmdNewVM Creates a new libvirt domain
 func NewCmdNewVM() *cobra.Command {
-	var image string
-	var format string
-	var cpu int
-	var memory int
-	var virtualSize int
-	var storagePool string
-	var nets *[]string
-	var info virtInfo
+	var vmInfo VM
+	var diskInfo Disk
+	// Using vda as this is the first disk
+	diskInfo.Device = "vda"
+	info := &VirtInfo
 	cmd := &cobra.Command{
 		Use:  "create <VM name>",
 		Long: "Create a new Virtual Machine",
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) != 1 {
-				genericError("Invalid number of arguments")
+				GenericError("Invalid number of arguments")
 			}
-			info.nets = libvirt.ListAllNetworks()
-			info.pools = libvirt.ListAllStoragePools()
-			for _, n := range *nets {
-				err := info.CheckNetwork(n)
-				if err != nil {
-					genericError(err.Error())
-				}
-			}
-			err := info.CheckPool(storagePool)
-			if err != nil {
-				genericError(err.Error())
-			}
-			_, err = os.Stat(image)
-			if err != nil {
-				genericError(err.Error())
-			}
-			diskFormat, err := GetDiskFormat(format)
-			if err != nil {
-				genericError(err.Error())
-			}
-			vmDisk := args[0] + diskFormat
-			_, err = os.Stat(vmDisk)
-			if err == nil {
-				genericError("Destination file already exists")
-			}
-			err = CreateImage(image, vmDisk, format)
-			if err != nil {
-				genericError(err.Error())
-			}
+			info.nets = rsvirt.ListAllNetworks()
+			info.pools = rsvirt.GetAllStoragePools()
+			vmInfo.Name = args[0]
+			vmInfo.Disks = append(vmInfo.Disks, diskInfo)
+			CreateVm(vmInfo)
 		},
 	}
-	cmd.Flags().StringVarP(&image, "image", "i", "", "Backing image")
-	cmd.Flags().StringVarP(&format, "format", "f", "qcow2", "Output format: qcow2 or raw.")
-	cmd.Flags().IntVarP(&virtualSize, "size", "s", 20, "Virtual size for the disk in GiB")
-	cmd.Flags().IntVarP(&cpu, "cpu", "c", 1, "Number of vCPUs")
-	cmd.Flags().IntVarP(&memory, "memory", "m", 1024, "RAM memory in MiB")
-	cmd.Flags().StringVarP(&storagePool, "pool", "p", "default", "Storage pool")
-	nets = cmd.Flags().StringSliceP("nets", "", []string{"default"}, "List of network interfaces")
+	cmd.Flags().StringVarP(&diskInfo.BaseImage, "image", "i", "", "Backing image")
+	cmd.Flags().StringVarP(&diskInfo.Format, "format", "f", "qcow2", "Output format: qcow2 or raw.")
+	cmd.Flags().IntVarP(&diskInfo.VirtualSize, "size", "s", 20, "Virtual size for the disk in GiB")
+	cmd.Flags().IntVarP(&vmInfo.Cpus, "cpu", "c", 1, "Number of vCPUs")
+	cmd.Flags().IntVarP(&vmInfo.Memory, "memory", "m", 1024, "RAM memory in MiB")
+	cmd.Flags().StringVarP(&diskInfo.PoolName, "pool", "p", "default", "Storage pool")
+	vmInfo.Interfaces = cmd.Flags().StringSliceP("nets", "", []string{"default"}, "List of network interfaces")
 	cmd.MarkFlagRequired("image")
 	return cmd
 }
 
-func genericError(msg string) {
+func GenericError(msg string) {
 	fmt.Printf("Error: %v\n", msg)
 	os.Exit(1)
 }

@@ -15,10 +15,10 @@
 package cli
 
 import (
-	"avt/cli/vm"
-	"avt/libvirt"
 	"fmt"
 	"os"
+	"rsvirt/cli/vm"
+	"rsvirt/libvirt"
 
 	"github.com/spf13/cobra"
 )
@@ -50,10 +50,11 @@ func init() {
 	rootCmd.AddCommand(vm.NewCmdStopVM())
 	rootCmd.AddCommand(vm.NewCmdPoweroffVM())
 	rootCmd.AddCommand(vm.NewCmdNewVM())
+	rootCmd.AddCommand(vm.NewCmddeleteVM())
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "avt",
+	Use:   "rsvirt",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:

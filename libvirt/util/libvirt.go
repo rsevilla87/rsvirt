@@ -1,6 +1,10 @@
 package util
 
-import libvirt "github.com/libvirt/libvirt-go"
+import (
+	"encoding/xml"
+
+	libvirt "github.com/libvirt/libvirt-go"
+)
 
 // VirDomainState Virtual machine status
 var VirDomainState = map[libvirt.DomainState]string{
@@ -16,8 +20,7 @@ var VirDomainState = map[libvirt.DomainState]string{
 
 // VMTemplate Virtual machine base template
 var VMTemplate = `<domain type='kvm'>
-  <name>{{.VmName}}</name>
-  <uuid>{{.Uuid}}</uuid>
+  <name>{{.Name}}</name>
   <memory unit='MiB'>{{.Memory}}</memory>
   <vcpu placement='static'>{{.Cpus}}</vcpu>
   <os>
@@ -25,27 +28,23 @@ var VMTemplate = `<domain type='kvm'>
     <boot dev='hd'/>
     <bootmenu enable='yes'/>
   </os>
-  <features>
-    <acpi/>
-    <apic/>
-    <pae/>
-  </features>
-  <clock offset='utc'/>
-  <on_poweroff>destroy</on_poweroff>
-  <on_reboot>restart</on_reboot>
-  <on_crash>destroy</on_crash>
   <devices>
-    <emulator>/usr/bin/qemu-kvm</emulator>
-    {{.Disks}}
-    <controller type='pci' index='0' model='pci-root'/>
-    {{.Interfaces}}
+    {{range .Disks}}
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='{{.Format}}'/>
+      <source file='{{.Path}}'/>
+      <target dev='{{.Device}}' bus='virtio'/>
+    </disk>
+    {{end}}
+    {{range .Interfaces}}
+    <interface type='network'>
+      <source network='{{.}}'/>
+      <model type='virtio'/>
+    </interface>
+    {{end}}
     <serial type='pty'>
-      <target type='isa-serial' port='0'>
-        <model name='isa-serial'/>
-      </target>
     </serial>
     <console type='pty'>
-      <target type='serial' port='0'/>
     </console>
     <input type='mouse' bus='ps2'/>
     <input type='keyboard' bus='ps2'/>
@@ -54,9 +53,44 @@ var VMTemplate = `<domain type='kvm'>
     </graphics>
     <video>
       <model type='virtio' heads='1' primary='yes'>
-        <acceleration accel3d='no'/>
       </model>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x0'/>
     </video>
   </devices>
 </domain>`
+
+var VMInterface = `<interface type='network'>
+  <source network='{{.Network}}'/>
+    <model type='virtio'/>
+</interface>`
+
+type Pool struct {
+	XMLName  xml.Name `xml:"pool"`
+	Text     string   `xml:",chardata"`
+	Type     string   `xml:"type,attr"`
+	Name     string   `xml:"name"`
+	Uuid     string   `xml:"uuid"`
+	Capacity struct {
+		Text string `xml:",chardata"`
+		Unit string `xml:"unit,attr"`
+	} `xml:"capacity"`
+	Allocation struct {
+		Text string `xml:",chardata"`
+		Unit string `xml:"unit,attr"`
+	} `xml:"allocation"`
+	Available struct {
+		Text string `xml:",chardata"`
+		Unit string `xml:"unit,attr"`
+	} `xml:"available"`
+	Source string `xml:"source"`
+	Target struct {
+		Text        string `xml:",chardata"`
+		Path        string `xml:"path"`
+		Permissions struct {
+			Text  string `xml:",chardata"`
+			Mode  string `xml:"mode"`
+			Owner string `xml:"owner"`
+			Group string `xml:"group"`
+			Label string `xml:"label"`
+		} `xml:"permissions"`
+	} `xml:"target"`
+}

@@ -14,7 +14,7 @@
 
 package main
 
-import "avt/cli"
+import "rsvirt/cli"
 
 func main() {
 	cli.Execute()

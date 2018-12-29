@@ -1,14 +1,14 @@
 
 # Parameters
 
-BINARY=yavt
+BINARY=rsvirt
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test -v
 PROJECTNAME=$(shell basename "$(PWD)")
 
-all: test build
+all: build
 
 build: dep vendor
 	$(GOBUILD) -o $(BINARY) -v
@@ -41,5 +41,5 @@ help: Makefile
 	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
 
-.PHONY: all dep test help
+.PHONY: all dep test help build
 

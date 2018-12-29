@@ -1,9 +1,9 @@
 package libvirt
 
 import (
-	"avt/libvirt/util"
 	"fmt"
 	"os"
+	"rsvirt/libvirt/util"
 
 	libvirt "github.com/libvirt/libvirt-go"
 )
@@ -72,20 +72,12 @@ func ListAllNetworks() []string {
 }
 
 // ListAllStoragePools List all storage pools available in libvirt
-func ListAllStoragePools() []string {
-	var poolSlice []string
+func GetAllStoragePools() []libvirt.StoragePool {
 	pools, err := C.ListAllStoragePools(libvirt.CONNECT_LIST_STORAGE_POOLS_ACTIVE | libvirt.CONNECT_LIST_STORAGE_POOLS_INACTIVE)
 	if err != nil {
 		panic(err)
 	}
-	for _, pool := range pools {
-		poolName, err := pool.GetName()
-		if err != nil {
-			panic(err)
-		}
-		poolSlice = append(poolSlice, poolName)
-	}
-	return poolSlice
+	return pools
 }
 
 // Start Starts a domain
@@ -117,19 +109,22 @@ func Stop(d string, force bool) {
 	}
 }
 
-func ShowDomain(domain string) string {
-	return "foo"
+func Delete(d string) {
+	dom, err := C.LookupDomainByName(d)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	dom.Destroy()
+	dom.Undefine()
 }
 
-/*func main() {
-
-	conn, err := libvirt.NewConnect("qemu:///system")
+func CreateVm(xmlDef string) (*libvirt.Domain, error) {
+	vm, err := C.DomainDefineXML(xmlDef)
+	vm.Create()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	dom, err := conn.LookupDomainByName("kafka")
-	xmldoc, err := dom.GetXMLDesc(0)
-	domcfg := &libvirt.Domain{}
-	err = xml.Unmarshal([]byte(xmldoc), domcfg)
-	fmt.Printf("Virt type %v", domcfg)
-}*/
+	return vm, nil
+}
