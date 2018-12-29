@@ -1,8 +1,10 @@
 package libvirt
 
 import (
+	"encoding/xml"
 	"fmt"
 	"os"
+	cliutil "rsvirt/cli/cli-util"
 	"rsvirt/libvirt/util"
 
 	libvirt "github.com/libvirt/libvirt-go"
@@ -110,10 +112,20 @@ func Stop(d string, force bool) {
 }
 
 func Delete(d string) {
+
+	var domain util.Domain
 	dom, err := C.LookupDomainByName(d)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+	xmlDef, _ := dom.GetXMLDesc(0)
+	xml.Unmarshal([]byte(xmlDef), &domain)
+	if !cliutil.AskForConfirmation("Delete " + d + " and all its disks?") {
+		os.Exit(0)
+	}
+	for _, d := range domain.Devices.Disk {
+		os.Remove(d.Source.File)
 	}
 	dom.Destroy()
 	dom.Undefine()

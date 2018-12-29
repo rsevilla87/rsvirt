@@ -63,6 +63,51 @@ var VMInterface = `<interface type='network'>
     <model type='virtio'/>
 </interface>`
 
+type Domain struct {
+	XMLName xml.Name `xml:"domain"`
+	Text    string   `xml:",chardata"`
+	Type    string   `xml:"type,attr"`
+	Name    string   `xml:"name"`
+	Memory  struct {
+		Text string `xml:",chardata"`
+		Unit string `xml:"unit,attr"`
+	} `xml:"memory"`
+	Vcpu struct {
+		Text      string `xml:",chardata"`
+		Placement string `xml:"placement,attr"`
+	} `xml:"vcpu"`
+	Devices struct {
+		Text string `xml:",chardata"`
+		Disk []struct {
+			Text   string `xml:",chardata"`
+			Type   string `xml:"type,attr"`
+			Device string `xml:"device,attr"`
+			Driver struct {
+				Text string `xml:",chardata"`
+				Name string `xml:"name,attr"`
+				Type string `xml:"type,attr"`
+			} `xml:"driver"`
+			Source struct {
+				Text string `xml:",chardata"`
+				File string `xml:"file,attr"`
+			} `xml:"source"`
+			Target struct {
+				Text string `xml:",chardata"`
+				Dev  string `xml:"dev,attr"`
+				Bus  string `xml:"bus,attr"`
+			} `xml:"target"`
+		} `xml:"disk"`
+		Interface []struct {
+			Text   string `xml:",chardata"`
+			Type   string `xml:"type,attr"`
+			Source struct {
+				Text    string `xml:",chardata"`
+				Network string `xml:"network,attr"`
+			} `xml:"source"`
+		} `xml:"interface"`
+	} `xml:"devices"`
+}
+
 type Pool struct {
 	XMLName  xml.Name `xml:"pool"`
 	Text     string   `xml:",chardata"`
