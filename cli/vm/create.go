@@ -37,6 +37,11 @@ func CreateVm(vmInfo VM) {
 	if err != nil {
 		GenericError(err.Error())
 	}
+	// Check if VM name is already defined
+	_, err = rsvirt.GetVM(vmInfo.Name)
+	if err == nil {
+		GenericError("VM " + vmInfo.Name + " already defined")
+	}
 	vmDisk := path.Join(xmlPool.Target.Path, vmInfo.Name+diskFormat)
 	// Check if destination file exists
 	_, err = os.Stat(vmDisk)
@@ -50,11 +55,15 @@ func CreateVm(vmInfo VM) {
 	}
 	t, err := template.New("vm").Parse(util.VMTemplate)
 	if err != nil {
-		panic(err)
+		GenericError(err.Error())
+
 	}
 	err = t.Execute(&xmlDef, vmInfo)
 	if err != nil {
-		panic(err)
+		GenericError(err.Error())
 	}
-	rsvirt.CreateVm(xmlDef.String())
+	_, err = rsvirt.CreateVm(xmlDef.String())
+	if err != nil {
+		GenericError(err.Error())
+	}
 }

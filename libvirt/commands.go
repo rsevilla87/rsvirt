@@ -75,10 +75,7 @@ func ListAllNetworks() []string {
 
 // ListAllStoragePools List all storage pools available in libvirt
 func GetAllStoragePools() []libvirt.StoragePool {
-	pools, err := C.ListAllStoragePools(libvirt.CONNECT_LIST_STORAGE_POOLS_ACTIVE | libvirt.CONNECT_LIST_STORAGE_POOLS_INACTIVE)
-	if err != nil {
-		panic(err)
-	}
+	pools, _ := C.ListAllStoragePools(libvirt.CONNECT_LIST_STORAGE_POOLS_ACTIVE | libvirt.CONNECT_LIST_STORAGE_POOLS_INACTIVE)
 	return pools
 }
 
@@ -112,7 +109,6 @@ func Stop(d string, force bool) {
 }
 
 func Delete(d string) {
-
 	var domain util.Domain
 	dom, err := C.LookupDomainByName(d)
 	if err != nil {
@@ -132,11 +128,20 @@ func Delete(d string) {
 }
 
 func CreateVm(xmlDef string) (*libvirt.Domain, error) {
-	vm, err := C.DomainDefineXML(xmlDef)
-	vm.Create()
+	var dom *libvirt.Domain
+	dom, err := C.DomainDefineXML(xmlDef)
+	dom.Create()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return dom, err
 	}
-	return vm, nil
+	return dom, nil
+}
+
+func GetVM(d string) (*libvirt.Domain, error) {
+	var dom *libvirt.Domain
+	dom, err := C.LookupDomainByName(d)
+	if err != nil {
+		return dom, err
+	}
+	return dom, nil
 }
