@@ -3,7 +3,8 @@ package vm
 import (
 	"fmt"
 	"os"
-	rsvirt "rsvirt/libvirt"
+
+	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
 
 	libvirt "github.com/libvirt/libvirt-go"
 
@@ -37,12 +38,13 @@ type VM struct {
 	Memory     int
 	Interfaces *[]string
 	Disks      []Disk
+	CloudInit  bool
 }
 
 func NewCmdListVM() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "list",
-		Long: "List Virtual Machines",
+		Use:   "list",
+		Short: "List Virtual Machines",
 		Run: func(cmd *cobra.Command, args []string) {
 			var keys []string
 			domMap := rsvirt.List()
@@ -54,7 +56,7 @@ func NewCmdListVM() *cobra.Command {
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Domain", "State", "IP Address"})
 			for _, k := range keys {
-				table.Append([]string{k, domMap[k].State, domMap[k].Ip})
+				table.Append([]string{k, domMap[k].State, domMap[k].IP})
 			}
 			table.Render()
 		},
@@ -64,8 +66,8 @@ func NewCmdListVM() *cobra.Command {
 
 func NewCmdStartVM() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "start",
-		Long: "Start Virtual Machines",
+		Use:   "start",
+		Short: "Start Virtual Machines",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
 				for _, d := range args {
@@ -81,8 +83,8 @@ func NewCmdStartVM() *cobra.Command {
 
 func NewCmdStopVM() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "stop",
-		Long: "Stop Virtual Machines",
+		Use:   "stop",
+		Short: "Stop Virtual Machines",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
 				for _, d := range args {
@@ -98,8 +100,8 @@ func NewCmdStopVM() *cobra.Command {
 
 func NewCmdPoweroffVM() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "poweroff",
-		Long: "Forcefully shutdown Virtual Machines",
+		Use:   "poweroff",
+		Short: "Forcefully shutdown Virtual Machines",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
 				for _, d := range args {
@@ -116,8 +118,8 @@ func NewCmdPoweroffVM() *cobra.Command {
 // NewCmddeleteVM Deletes libvirt domains
 func NewCmddeleteVM() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "delete",
-		Long: "Delete Virtual Machines",
+		Use:   "delete",
+		Short: "Delete Virtual Machines",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
 				for _, d := range args {
@@ -139,9 +141,9 @@ func NewCmdNewVM() *cobra.Command {
 	diskInfo.Device = "vda"
 	info := &VirtInfo
 	cmd := &cobra.Command{
-		Use:  "create <VM name>",
-		Long: "Create a new Virtual Machine",
-		Args: cobra.MinimumNArgs(1),
+		Use:   "create <VM name>",
+		Short: "Create a new Virtual Machine",
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) != 1 {
 				GenericError("Invalid number of arguments")
@@ -150,7 +152,9 @@ func NewCmdNewVM() *cobra.Command {
 			info.pools = rsvirt.GetAllStoragePools()
 			vmInfo.Name = args[0]
 			vmInfo.Disks = append(vmInfo.Disks, diskInfo)
-			CreateVm(vmInfo)
+			if err := CreateVm(&vmInfo); err != nil {
+				GenericError(err.Error())
+			}
 		},
 	}
 	cmd.Flags().StringVarP(&diskInfo.BaseImage, "image", "i", "", "Backing image")
@@ -159,7 +163,8 @@ func NewCmdNewVM() *cobra.Command {
 	cmd.Flags().IntVarP(&vmInfo.Cpus, "cpu", "c", 1, "Number of vCPUs")
 	cmd.Flags().IntVarP(&vmInfo.Memory, "memory", "m", 1024, "RAM memory in MiB")
 	cmd.Flags().StringVarP(&diskInfo.PoolName, "pool", "p", "default", "Storage pool")
-	vmInfo.Interfaces = cmd.Flags().StringSliceP("nets", "", []string{"default"}, "List of network interfaces")
+	cmd.Flags().BoolVar(&vmInfo.CloudInit, "cloud-init", false, "Enable cloud init")
+	vmInfo.Interfaces = cmd.Flags().StringSlice("nets", []string{"default"}, "List of network interfaces")
 	cmd.MarkFlagRequired("image")
 	return cmd
 }

@@ -4,8 +4,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
-	cliutil "rsvirt/cli/cli-util"
-	"rsvirt/libvirt/util"
+	cliutil "github.com/rsevilla87/rsvirt/cli/cli-util"
+	"github.com/rsevilla87/rsvirt/libvirt/util"
 
 	libvirt "github.com/libvirt/libvirt-go"
 )
@@ -14,7 +14,7 @@ var C *libvirt.Connect
 
 type domain struct {
 	State  string
-	Ip     string
+	IP     string
 	Vcpu   string
 	Memory string
 }
@@ -48,7 +48,7 @@ func List() map[string]domain {
 		}
 		if err == nil && len(iface) > 0 {
 			// Only show the first IP address of the first interface present in the VM
-			d.Ip = iface[0].Addrs[0].Addr
+			d.IP = iface[0].Addrs[0].Addr
 		}
 		domMap[name] = d
 

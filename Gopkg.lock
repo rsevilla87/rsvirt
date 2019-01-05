@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
-  revision = "ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb"
-  version = "v0.0.3"
+  revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
+  version = "v0.0.4"
 
 [[projects]]
   name = "github.com/olekukonko/tablewriter"

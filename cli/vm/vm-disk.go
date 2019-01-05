@@ -1,12 +1,12 @@
 package vm
 
 import (
-	"bytes"
 	"errors"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
+
+	cliutil "github.com/rsevilla87/rsvirt/cli/cli-util"
 )
 
 // QEMU_IMG qemu-img binary
@@ -23,16 +23,14 @@ func CreateImage(diskInfo *Disk) error {
 	// Check if baseimage exists
 	_, err := os.Stat(diskInfo.BaseImage)
 	if err != nil {
-		GenericError(err.Error())
+		return err
 	}
 	absPath, err := filepath.Abs(diskInfo.BaseImage)
 	if err != nil {
-		GenericError(err.Error())
+		return err
 	}
 	diskInfo.BaseImage = absPath
 	var args []string
-	// Create buffer to store stderr io.writer output
-	var stderr bytes.Buffer
 	args = append(args, "create")
 	args = append(args, "-f")
 	args = append(args, diskInfo.Format)
@@ -40,11 +38,8 @@ func CreateImage(diskInfo *Disk) error {
 	args = append(args, diskInfo.BaseImage)
 	args = append(args, diskInfo.Path)
 	args = append(args, strconv.Itoa(diskInfo.VirtualSize)+"G")
-	cmd := exec.Command(QEMU_IMG, args...)
-	cmd.Stderr = &stderr
-	_, err = cmd.Output()
-	if err != nil {
-		return errors.New(stderr.String())
+	if err := cliutil.CmdExecutor(QEMU_IMG, args); err != nil {
+		return err
 	}
 	return nil
 }

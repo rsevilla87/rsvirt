@@ -14,8 +14,67 @@
 
 package main
 
-import "rsvirt/cli"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/rsevilla87/rsvirt/cli/vm"
+	"github.com/rsevilla87/rsvirt/libvirt"
+
+	"github.com/spf13/cobra"
+)
+
+var progName = filepath.Base(os.Args[0])
+
+var completionCmd = &cobra.Command{
+	Use:   "completion",
+	Short: "Generates bash completion scripts",
+	Long: `To load completion run
+
+			. <(rsvirt completion)
+
+			To configure your bash shell to load completions for each session add to your bashrc
+
+			# ~/.bashrc or ~/.profile
+			. <(bitbucket completion)
+			`,
+	Run: func(cmd *cobra.Command, args []string) {
+		rootCmd.GenBashCompletion(os.Stdout)
+	},
+}
+
+func init() {
+	c := libvirt.NewConnection("qemu:///system", "libvirt")
+	libvirt.C = c
+	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(vm.NewCmdListVM())
+	rootCmd.AddCommand(vm.NewCmdStartVM())
+	rootCmd.AddCommand(vm.NewCmdStopVM())
+	rootCmd.AddCommand(vm.NewCmdPoweroffVM())
+	rootCmd.AddCommand(vm.NewCmdNewVM())
+	rootCmd.AddCommand(vm.NewCmddeleteVM())
+}
+
+var rootCmd = &cobra.Command{
+	Use:   progName,
+	Short: "Perform fast actions over libvirt based VMs",
+	Long: `This CLI tool acts as a wrapper over libvirt.
+
+Similar to other tools like virsh but providing some shortcuts to the
+most common tasks, like creating VMs from base images or attaching
+several nics to a VM at creation time`,
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
 
 func main() {
-	cli.Execute()
+	Execute()
 }
