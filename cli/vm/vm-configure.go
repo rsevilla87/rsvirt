@@ -1,57 +1,61 @@
 package vm
 
 import (
+	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
-	"strconv"
-	"strings"
 	"time"
-
-	cliutil "github.com/rsevilla87/rsvirt/cli/cli-util"
 )
 
-var GUESTMOUNT = "guestmount"
+var GUESTMOUNT = "/usr/bin/guestmount"
 
 func (diskInfo *Disk) DisableCI() error {
 	var args []string
 	dir, err := ioutil.TempDir("", "image")
-	nano := time.Now().UnixNano()
-	pidFile := path.Join("/tmp", strconv.FormatInt(nano, 10))
+	r, w, err := os.Pipe()
 	if err != nil {
 		return err
 	}
 	args = append(args, "-a")
 	args = append(args, diskInfo.Path)
 	args = append(args, "-i")
+	args = append(args, "--fd=3")
+	args = append(args, "--no-fork")
 	args = append(args, dir)
-	args = append(args, "--pid-file")
-	args = append(args, pidFile)
-	err = cliutil.CmdExecutor(GUESTMOUNT, args)
+	// Don't block as we will check fd 3
+	mount := exec.Command(GUESTMOUNT, args...)
+	mount.ExtraFiles = []*os.File{w}
+	err = mount.Start()
 	if err != nil {
-		return err
+		return fmt.Errorf("Command failed\n%v %s", GUESTMOUNT, args)
 	}
-	p, err := ioutil.ReadFile(pidFile)
+	r.SetReadDeadline(time.Now().Add(time.Second * 10))
+	out := make([]byte, 1)
+	_, err = r.Read(out)
 	if err != nil {
-		return err
-	}
-	pid, _ := strconv.Atoi(strings.TrimSuffix(string((p)), "\n"))
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return err
+		var stderr bytes.Buffer
+		mount.Stderr = &stderr
+		return fmt.Errorf(string(stderr.Bytes()))
 	}
 	f, err := os.Create(path.Join(dir, "etc/cloud/cloud-init.disabled"))
 	if err != nil {
 		return err
 	}
+	f.Sync()
 	f.Close()
-	if err != nil {
-		return err
-	}
-	proc.Kill()
-	err = cliutil.CmdExecutor("umount", []string{dir})
+	mount.Process.Kill()
+	mount.Process.Wait()
+	umount := exec.Command("umount", []string{dir}...)
+	err = umount.Run()
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (diskInfo *Disk) deleteDisk() {
+	os.Remove(diskInfo.Path)
 }
