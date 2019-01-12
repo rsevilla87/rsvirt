@@ -70,22 +70,21 @@ func GetAllStoragePools() []libvirt.StoragePool {
 }
 
 // Start Starts a domain
-func Start(d string) {
+func Start(d string) error {
 	dom, err := C.LookupDomainByName(d)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return fmt.Errorf(err.Error())
 	}
 	if dom.Create() != nil {
-		panic(err)
+		return fmt.Errorf(err.Error())
 	}
+	return nil
 }
 
 func Stop(d string, force bool) error {
 	dom, err := C.LookupDomainByName(d)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return fmt.Errorf(err.Error())
 	}
 	if force {
 		err = dom.Destroy()
