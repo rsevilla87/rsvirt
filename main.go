@@ -54,6 +54,7 @@ func init() {
 	rootCmd.AddCommand(vm.NewCmdPoweroffVM())
 	rootCmd.AddCommand(vm.NewCmdNewVM())
 	rootCmd.AddCommand(vm.NewCmddeleteVM())
+	rootCmd.AddCommand(vm.NewCmdSSH())
 }
 
 var rootCmd = &cobra.Command{

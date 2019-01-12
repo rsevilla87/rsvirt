@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+
 	cliutil "github.com/rsevilla87/rsvirt/cli/cli-util"
 	"github.com/rsevilla87/rsvirt/libvirt/util"
 
@@ -13,6 +14,7 @@ import (
 var C *libvirt.Connect
 
 type domain struct {
+	Name   string
 	State  string
 	IP     string
 	Vcpu   string
@@ -27,33 +29,21 @@ func NewConnection(uri string, conType string) *libvirt.Connect {
 	return conn
 }
 
-func List() map[string]domain {
+func List() ([]domain, error) {
 	doms, err := C.ListAllDomains(libvirt.CONNECT_LIST_DOMAINS_INACTIVE | libvirt.CONNECT_LIST_DOMAINS_ACTIVE)
-	domMap := make(map[string]domain)
+	var domList []domain
 	if err != nil {
 		panic(err)
 	}
 	for _, dom := range doms {
 		name, err := dom.GetName()
+		dom, err := GetVM(name)
 		if err != nil {
-			panic(err)
+			return domList, err
 		}
-		state, _, err := dom.GetState()
-		if err != nil {
-			panic(err)
-		}
-		iface, err := dom.ListAllInterfaceAddresses(0)
-		d := domain{
-			State: util.VirDomainState[state],
-		}
-		if err == nil && len(iface) > 0 {
-			// Only show the first IP address of the first interface present in the VM
-			d.IP = iface[0].Addrs[0].Addr
-		}
-		domMap[name] = d
-
+		domList = append(domList, dom)
 	}
-	return domMap
+	return domList, nil
 }
 
 // ListAllNetworks List all networks available in libvirt
@@ -91,7 +81,7 @@ func Start(d string) {
 	}
 }
 
-func Stop(d string, force bool) {
+func Stop(d string, force bool) error {
 	dom, err := C.LookupDomainByName(d)
 	if err != nil {
 		fmt.Println(err)
@@ -103,17 +93,16 @@ func Stop(d string, force bool) {
 		err = dom.Shutdown()
 	}
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return fmt.Errorf(err.Error())
 	}
+	return nil
 }
 
-func Delete(d string) {
+func Delete(d string) error {
 	var domain util.Domain
 	dom, err := C.LookupDomainByName(d)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return fmt.Errorf(err.Error())
 	}
 	xmlDef, _ := dom.GetXMLDesc(0)
 	xml.Unmarshal([]byte(xmlDef), &domain)
@@ -125,6 +114,7 @@ func Delete(d string) {
 	}
 	dom.Destroy()
 	dom.Undefine()
+	return nil
 }
 
 func CreateVm(xmlDef string) (*libvirt.Domain, error) {
@@ -137,11 +127,19 @@ func CreateVm(xmlDef string) (*libvirt.Domain, error) {
 	return dom, nil
 }
 
-func GetVM(d string) (*libvirt.Domain, error) {
-	var dom *libvirt.Domain
-	dom, err := C.LookupDomainByName(d)
+func GetVM(domName string) (domain, error) {
+	var domObj domain
+	dom, err := C.LookupDomainByName(domName)
 	if err != nil {
-		return dom, err
+		return domObj, err
 	}
-	return dom, nil
+	domObj.Name, _ = dom.GetName()
+	state, _, _ := dom.GetState()
+	iface, err := dom.ListAllInterfaceAddresses(0)
+	if err == nil && len(iface) > 0 {
+		// Only show the first IP address of the first interface present in the VM
+		domObj.IP = iface[0].Addrs[0].Addr
+	}
+	domObj.State = util.VirDomainState[state]
+	return domObj, nil
 }
