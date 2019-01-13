@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"encoding/xml"
-	"fmt"
 	"os"
 
 	cliutil "github.com/rsevilla87/rsvirt/cli/cli-util"
@@ -11,7 +10,7 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-var C *libvirt.Connect
+var c *libvirt.Connect
 
 type domain struct {
 	Name   string
@@ -21,16 +20,20 @@ type domain struct {
 	Memory string
 }
 
-func NewConnection(uri string, conType string) *libvirt.Connect {
-	conn, err := libvirt.NewConnect(uri)
+func NewConnection(uri, conType string, ro bool) {
+	var err error
+	if ro {
+		c, err = libvirt.NewConnectReadOnly(uri)
+	} else {
+		c, err = libvirt.NewConnect(uri)
+	}
 	if err != nil {
 		panic(err)
 	}
-	return conn
 }
 
 func List() ([]domain, error) {
-	doms, err := C.ListAllDomains(libvirt.CONNECT_LIST_DOMAINS_INACTIVE | libvirt.CONNECT_LIST_DOMAINS_ACTIVE)
+	doms, err := c.ListAllDomains(libvirt.CONNECT_LIST_DOMAINS_INACTIVE | libvirt.CONNECT_LIST_DOMAINS_ACTIVE)
 	var domList []domain
 	if err != nil {
 		panic(err)
@@ -49,7 +52,7 @@ func List() ([]domain, error) {
 // ListAllNetworks List all networks available in libvirt
 func ListAllNetworks() []string {
 	var netSlice []string
-	nets, err := C.ListAllNetworks(libvirt.CONNECT_LIST_NETWORKS_ACTIVE | libvirt.CONNECT_LIST_NETWORKS_INACTIVE)
+	nets, err := c.ListAllNetworks(libvirt.CONNECT_LIST_NETWORKS_ACTIVE | libvirt.CONNECT_LIST_NETWORKS_INACTIVE)
 	if err != nil {
 		panic(err)
 	}
@@ -65,26 +68,26 @@ func ListAllNetworks() []string {
 
 // ListAllStoragePools List all storage pools available in libvirt
 func GetAllStoragePools() []libvirt.StoragePool {
-	pools, _ := C.ListAllStoragePools(libvirt.CONNECT_LIST_STORAGE_POOLS_ACTIVE | libvirt.CONNECT_LIST_STORAGE_POOLS_INACTIVE)
+	pools, _ := c.ListAllStoragePools(libvirt.CONNECT_LIST_STORAGE_POOLS_ACTIVE | libvirt.CONNECT_LIST_STORAGE_POOLS_INACTIVE)
 	return pools
 }
 
 // Start Starts a domain
 func Start(d string) error {
-	dom, err := C.LookupDomainByName(d)
+	dom, err := c.LookupDomainByName(d)
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		return err
 	}
 	if dom.Create() != nil {
-		return fmt.Errorf(err.Error())
+		return err
 	}
 	return nil
 }
 
 func Stop(d string, force bool) error {
-	dom, err := C.LookupDomainByName(d)
+	dom, err := c.LookupDomainByName(d)
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		return err
 	}
 	if force {
 		err = dom.Destroy()
@@ -92,33 +95,36 @@ func Stop(d string, force bool) error {
 		err = dom.Shutdown()
 	}
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		return err
 	}
 	return nil
 }
 
 func Delete(d string) error {
 	var domain util.Domain
-	dom, err := C.LookupDomainByName(d)
+	dom, err := c.LookupDomainByName(d)
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		return err
 	}
 	xmlDef, _ := dom.GetXMLDesc(0)
 	xml.Unmarshal([]byte(xmlDef), &domain)
 	if !cliutil.AskForConfirmation("Delete " + d + " and all its disks?") {
-		os.Exit(0)
-	}
-	for _, d := range domain.Devices.Disk {
-		os.Remove(d.Source.File)
+		return nil
 	}
 	dom.Destroy()
 	dom.Undefine()
+	for _, d := range domain.Devices.Disk {
+		err := os.Remove(d.Source.File)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func CreateVm(xmlDef string) (*libvirt.Domain, error) {
 	var dom *libvirt.Domain
-	dom, err := C.DomainDefineXML(xmlDef)
+	dom, err := c.DomainDefineXML(xmlDef)
 	dom.Create()
 	if err != nil {
 		return dom, err
@@ -128,7 +134,7 @@ func CreateVm(xmlDef string) (*libvirt.Domain, error) {
 
 func GetVM(domName string) (domain, error) {
 	var domObj domain
-	dom, err := C.LookupDomainByName(domName)
+	dom, err := c.LookupDomainByName(domName)
 	if err != nil {
 		return domObj, err
 	}

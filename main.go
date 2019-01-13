@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 
 	"github.com/rsevilla87/rsvirt/cli/vm"
-	"github.com/rsevilla87/rsvirt/libvirt"
 
 	"github.com/spf13/cobra"
 )
@@ -45,8 +44,6 @@ var completionCmd = &cobra.Command{
 }
 
 func init() {
-	c := libvirt.NewConnection("qemu:///system", "libvirt")
-	libvirt.C = c
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(vm.NewCmdListVM())
 	rootCmd.AddCommand(vm.NewCmdStartVM())
@@ -65,6 +62,9 @@ var rootCmd = &cobra.Command{
 Similar to other tools like virsh but providing some shortcuts to the
 most common tasks, like creating VMs from base images or attaching
 several nics to a VM at creation time`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Broza")
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
