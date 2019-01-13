@@ -83,6 +83,7 @@ func NewCmdStartVM() *cobra.Command {
 }
 
 func NewCmdStopVM() *cobra.Command {
+	var force bool
 	cmd := &cobra.Command{
 		Use:   "stop",
 		Short: "Stop Virtual Machines",
@@ -92,31 +93,13 @@ func NewCmdStopVM() *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			for _, d := range args {
-				if err := rsvirt.Stop(d, false); err != nil {
+				if err := rsvirt.Stop(d, force); err != nil {
 					fmt.Println(err.Error())
 				}
 			}
 		},
 	}
-	return cmd
-}
-
-func NewCmdPoweroffVM() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "poweroff",
-		Short: "Forcefully shutdown Virtual Machines",
-		Args:  cobra.MinimumNArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", false)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-			for _, d := range args {
-				if err := rsvirt.Stop(d, true); err != nil {
-					fmt.Println(err.Error())
-				}
-			}
-		},
-	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Shutdown VM")
 	return cmd
 }
 

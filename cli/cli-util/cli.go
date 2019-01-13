@@ -3,7 +3,6 @@ package util
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 )
@@ -12,12 +11,7 @@ func AskForConfirmation(s string) bool {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Printf("%s [y]/n: ", s)
-
-		response, err := reader.ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
-		}
-
+		response, _ := reader.ReadString('\n')
 		response = strings.ToLower(strings.TrimSpace(response))
 		if response == "y" || response == "yes" || response == "" {
 			return true

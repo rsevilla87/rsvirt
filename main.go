@@ -48,7 +48,6 @@ func init() {
 	rootCmd.AddCommand(vm.NewCmdListVM())
 	rootCmd.AddCommand(vm.NewCmdStartVM())
 	rootCmd.AddCommand(vm.NewCmdStopVM())
-	rootCmd.AddCommand(vm.NewCmdPoweroffVM())
 	rootCmd.AddCommand(vm.NewCmdNewVM())
 	rootCmd.AddCommand(vm.NewCmddeleteVM())
 	rootCmd.AddCommand(vm.NewCmdSSH())
