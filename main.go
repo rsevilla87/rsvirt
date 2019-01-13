@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 
 	"github.com/rsevilla87/rsvirt/cli/vm"
+	"github.com/rsevilla87/rsvirt/version"
 
 	"github.com/spf13/cobra"
 )
@@ -43,8 +44,22 @@ var completionCmd = &cobra.Command{
 	},
 }
 
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number of rsvirt",
+	Long:  `All software has versions. This is rsvirt`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Build Date:", version.BuildDate)
+		fmt.Println("Git Commit:", version.GitCommit)
+		fmt.Println("Version:", version.Version)
+		fmt.Println("Go Version:", version.GoVersion)
+		fmt.Println("OS / Arch:", version.OsArch)
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(vm.NewCmdListVM())
 	rootCmd.AddCommand(vm.NewCmdStartVM())
 	rootCmd.AddCommand(vm.NewCmdStopVM())
@@ -61,9 +76,6 @@ var rootCmd = &cobra.Command{
 Similar to other tools like virsh but providing some shortcuts to the
 most common tasks, like creating VMs from base images or attaching
 several nics to a VM at creation time`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Broza")
-	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

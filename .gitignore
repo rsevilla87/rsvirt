@@ -1,4 +1,5 @@
 rsvirt
 *.qcow
 *.img
+bin
 setenv.sh
