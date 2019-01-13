@@ -10,7 +10,6 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test -v
-PROJECTNAME=$(shell basename "$(PWD)")
 
 all: build
 
