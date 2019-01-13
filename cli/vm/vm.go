@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
 
@@ -168,20 +169,24 @@ func NewCmdSSH() *cobra.Command {
 	var user string
 	var sshOpts string
 	cmd := &cobra.Command{
-		Use:   "ssh <VM name>",
+		Use:   "ssh <user>@<VM name>",
 		Short: "SSH to Virtual Machine",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) != 1 {
-				cmd.Help()
+			vmName := args[0]
+			vm := strings.Split(args[0], "@")
+			if len(vm) > 1 {
+				// Get last slice element as VM name
+				vmName = vm[len(vm)-1]
+				// Get left part of the slice as user
+				user = strings.Join(vm[:len(vm)-1], "@")
 			}
-			err := SSH(args[len(args)-1], user, sshOpts)
+			err := SSH(vmName, user, sshOpts)
 			if err != nil {
 				GenericError(err.Error())
 			}
 		},
 	}
-	cmd.Flags().StringVarP(&user, "user", "u", "", "SSH User")
 	cmd.Flags().StringVarP(&sshOpts, "ssh-opts", "o", "", "SSH options")
 	return cmd
 }
