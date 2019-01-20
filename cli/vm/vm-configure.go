@@ -56,6 +56,9 @@ func (diskInfo *Disk) DisableCI() error {
 	return nil
 }
 
-func (diskInfo *Disk) deleteDisk() {
-	os.Remove(diskInfo.Path)
+func (diskInfo *Disk) DeleteDisk() {
+	err := os.Remove(diskInfo.Path)
+	if err != nil {
+		fmt.Printf("Failed while deleting disk: %s", err.Error())
+	}
 }

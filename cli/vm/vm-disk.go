@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -49,5 +49,5 @@ func GetDiskFormat(format string) (string, error) {
 	if val, ok := FormatStr[format]; ok {
 		return val, nil
 	}
-	return "", errors.New("Unrecognized format")
+	return "", fmt.Errorf("Unrecognized format: %s", format)
 }

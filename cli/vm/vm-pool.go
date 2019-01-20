@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"errors"
+	"fmt"
 
 	libvirt "github.com/libvirt/libvirt-go"
 )
@@ -14,5 +14,5 @@ func (info *virtInfo) CheckPool(pool string) (libvirt.StoragePool, error) {
 			return p, nil
 		}
 	}
-	return storagePool, errors.New("Storage pool " + pool + " not found")
+	return storagePool, fmt.Errorf("Storage pool %s not found", pool)
 }

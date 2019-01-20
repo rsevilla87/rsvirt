@@ -1,8 +1,6 @@
 package vm
 
-import (
-	"errors"
-)
+import "fmt"
 
 func (info *virtInfo) CheckNetwork(net string) error {
 	for _, n := range info.nets {
@@ -10,5 +8,5 @@ func (info *virtInfo) CheckNetwork(net string) error {
 			return nil
 		}
 	}
-	return errors.New("Network " + net + " not found")
+	return fmt.Errorf("Network %s not found", net)
 }

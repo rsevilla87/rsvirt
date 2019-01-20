@@ -3,7 +3,7 @@ package vm
 import (
 	"bytes"
 	"encoding/xml"
-	"errors"
+	"fmt"
 	"os"
 	"path"
 	"text/template"
@@ -43,13 +43,13 @@ func CreateVm(vmInfo *VM) error {
 	// Check if VM name is already defined
 	_, err = rsvirt.GetVM(vmInfo.Name)
 	if err == nil {
-		return errors.New("VM " + vmInfo.Name + " already defined")
+		return fmt.Errorf("VM %s already defined", vmInfo.Name)
 	}
 	vmDisk := path.Join(xmlPool.Target.Path, vmInfo.Name+diskFormat)
 	// Check if destination file exists
 	_, err = os.Stat(vmDisk)
 	if err == nil {
-		return errors.New("Destination file already exists")
+		return fmt.Errorf("Destination file already exists")
 	}
 	diskInfo.Path = vmDisk
 	err = CreateImage(diskInfo)
@@ -58,6 +58,7 @@ func CreateVm(vmInfo *VM) error {
 	}
 	if !vmInfo.CloudInit {
 		if err := diskInfo.DisableCI(); err != nil {
+			diskInfo.DeleteDisk()
 			return err
 		}
 	}
