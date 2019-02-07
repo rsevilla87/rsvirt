@@ -10,7 +10,8 @@ import (
 	"time"
 )
 
-var GUESTMOUNT = "/usr/bin/guestmount"
+var GUESTMOUNT = "guestmount"
+var VIRTCUSTOMIZE = "virt-customize"
 
 func (diskInfo *Disk) DisableCI() error {
 	var args []string
@@ -52,6 +53,22 @@ func (diskInfo *Disk) DisableCI() error {
 	err = umount.Run()
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (diskInfo *Disk) RootPassword(password string) error {
+	var args []string
+	var stderr bytes.Buffer
+	args = append(args, "-a")
+	args = append(args, diskInfo.Path)
+	args = append(args, "--root-password")
+	args = append(args, fmt.Sprintf("password:%s", password))
+	cmd := exec.Command(VIRTCUSTOMIZE, args...)
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf(string(stderr.Bytes()))
 	}
 	return nil
 }

@@ -62,6 +62,11 @@ func CreateVm(vmInfo *VM) error {
 			return err
 		}
 	}
+	if vmInfo.RootPassword != "" {
+		if err := diskInfo.RootPassword(vmInfo.RootPassword); err != nil {
+			fmt.Println(err.Error())
+		}
+	}
 	t, err := template.New("vm").Parse(util.VMTemplate)
 	if err != nil {
 		return err

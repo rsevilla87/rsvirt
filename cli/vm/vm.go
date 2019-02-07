@@ -32,12 +32,13 @@ type Disk struct {
 }
 
 type VM struct {
-	Name       string
-	Cpus       int
-	Memory     int
-	Interfaces *[]string
-	Disks      []Disk
-	CloudInit  bool
+	Name         string
+	Cpus         int
+	Memory       int
+	Interfaces   *[]string
+	Disks        []Disk
+	CloudInit    bool
+	RootPassword string
 }
 
 func NewCmdListVM() *cobra.Command {
@@ -161,6 +162,7 @@ func NewCmdNewVM() *cobra.Command {
 	cmd.Flags().IntVarP(&vmInfo.Memory, "memory", "m", 1024, "RAM memory in MiB")
 	cmd.Flags().StringVarP(&diskInfo.PoolName, "pool", "p", "default", "Storage pool")
 	cmd.Flags().BoolVar(&vmInfo.CloudInit, "cloud-init", false, "Enable cloud init")
+	cmd.Flags().StringVar(&vmInfo.RootPassword, "password", "", "Root password")
 	vmInfo.Interfaces = cmd.Flags().StringSlice("nets", []string{"default"}, "List of network interfaces")
 	cmd.MarkFlagRequired("image")
 	return cmd
