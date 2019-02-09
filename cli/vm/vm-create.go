@@ -68,7 +68,10 @@ func prereqs(vmInfo *VM) error {
 	}
 	poolInfo, _ := pool.GetXMLDesc(libvirt.STORAGE_XML_INACTIVE)
 	xml.Unmarshal([]byte(poolInfo), &xmlPool)
-	diskInfo.Pool = pool
+	diskInfo.Pool = Pool{
+		Name: xmlPool.Name,
+		Path: xmlPool.Target.Path,
+	}
 	// Check if disk format is defined
 	diskFormat, err := GetDiskFormat(diskInfo.Format)
 	if err != nil {
@@ -79,10 +82,10 @@ func prereqs(vmInfo *VM) error {
 	if err == nil {
 		return fmt.Errorf("VM %s already defined", vmInfo.Name)
 	}
-	vmDisk := path.Join(xmlPool.Target.Path, vmInfo.Name+diskFormat)
+	vmDisk := path.Join(diskInfo.Pool.Path, vmInfo.Name+diskFormat)
 	// Check if destination file exists
 	_, err = os.Stat(vmDisk)
-	if err == nil {
+	if os.IsExist(err) {
 		return fmt.Errorf("Destination file already exists")
 	}
 	diskInfo.Path = vmDisk

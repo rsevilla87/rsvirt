@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -24,11 +25,16 @@ var VirtInfo virtInfo
 type Disk struct {
 	BaseImage   string
 	PoolName    string
-	Pool        libvirt.StoragePool
+	Pool        Pool
 	Path        string
 	Device      string
 	Format      string
 	VirtualSize int
+}
+
+type Pool struct {
+	Name string
+	Path string
 }
 
 type VM struct {
@@ -42,6 +48,7 @@ type VM struct {
 }
 
 func NewCmdListVM() *cobra.Command {
+	var output string
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List Virtual Machines",
@@ -53,6 +60,17 @@ func NewCmdListVM() *cobra.Command {
 			if err != nil {
 				GenericError(err.Error())
 			}
+			if output == "simple" {
+				for _, dom := range domList {
+					fmt.Printf("%s ", dom.Name)
+				}
+				os.Exit(0)
+			}
+			if output == "json" {
+				j, _ := json.Marshal(domList)
+				fmt.Println(string(j))
+				os.Exit(0)
+			}
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Domain", "State", "IP Address"})
 			for _, d := range domList {
@@ -61,6 +79,8 @@ func NewCmdListVM() *cobra.Command {
 			table.Render()
 		},
 	}
+	flags := cmd.Flags()
+	flags.StringVarP(&output, "output", "o", "", "Output format: simple or json")
 	return cmd
 }
 
@@ -100,7 +120,8 @@ func NewCmdStopVM() *cobra.Command {
 			}
 		},
 	}
-	cmd.Flags().BoolVarP(&force, "force", "f", false, "Shutdown VM")
+	flags := cmd.Flags()
+	flags.BoolVarP(&force, "force", "f", false, "Shutdown VM")
 	return cmd
 }
 
@@ -153,17 +174,20 @@ func NewCmdNewVM() *cobra.Command {
 			if err := CreateVm(&vmInfo); err != nil {
 				GenericError(err.Error())
 			}
+			j, _ := json.Marshal(vmInfo)
+			logAndExit(string(j))
 		},
 	}
-	cmd.Flags().StringVarP(&diskInfo.BaseImage, "image", "i", "", "Backing image")
-	cmd.Flags().StringVarP(&diskInfo.Format, "format", "f", "qcow2", "Output format: qcow2 or raw.")
-	cmd.Flags().IntVarP(&diskInfo.VirtualSize, "size", "s", 10, "Virtual size for the disk in GiB")
-	cmd.Flags().IntVarP(&vmInfo.Cpus, "cpu", "c", 1, "Number of vCPUs")
-	cmd.Flags().IntVarP(&vmInfo.Memory, "memory", "m", 1024, "RAM memory in MiB")
-	cmd.Flags().StringVarP(&diskInfo.PoolName, "pool", "p", "default", "Storage pool")
-	cmd.Flags().BoolVar(&vmInfo.CloudInit, "cloud-init", false, "Enable cloud init")
-	cmd.Flags().StringVar(&vmInfo.RootPassword, "password", "", "Root password")
-	vmInfo.Interfaces = *cmd.Flags().StringSlice("nets", []string{"default"}, "List of network interfaces")
+	flags := cmd.Flags()
+	flags.StringVarP(&diskInfo.BaseImage, "image", "i", "", "Backing image")
+	flags.StringVarP(&diskInfo.Format, "format", "f", "qcow2", "Output format: qcow2 or raw.")
+	flags.IntVarP(&diskInfo.VirtualSize, "size", "s", 10, "Virtual size for the disk in GiB")
+	flags.IntVarP(&vmInfo.Cpus, "cpu", "c", 1, "Number of vCPUs")
+	flags.IntVarP(&vmInfo.Memory, "memory", "m", 1024, "RAM memory in MiB")
+	flags.StringVarP(&diskInfo.PoolName, "pool", "p", "default", "Storage pool")
+	flags.BoolVar(&vmInfo.CloudInit, "cloud-init", false, "Enable cloud init")
+	flags.StringVar(&vmInfo.RootPassword, "password", "", "Root password")
+	flags.StringSliceVar(&vmInfo.Interfaces, "nets", []string{"default"}, "List of network interfaces")
 	cmd.MarkFlagRequired("image")
 	return cmd
 }
@@ -193,8 +217,15 @@ func NewCmdSSH() *cobra.Command {
 			}
 		},
 	}
-	cmd.Flags().StringVarP(&sshOpts, "ssh-opts", "o", "", "SSH options")
+	flags := cmd.Flags()
+	flags.StringVarP(&sshOpts, "ssh-opts", "o", "", "SSH options")
 	return cmd
+}
+
+func logAndExit(msg string) {
+	fmt.Println(msg)
+	os.Exit(0)
+
 }
 
 func GenericError(msg string) {
