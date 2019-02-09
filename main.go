@@ -29,14 +29,15 @@ import (
 var progName = filepath.Base(os.Args[0])
 
 func init() {
-	rootCmd.AddCommand(completionCmd)
-	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(vm.NewCmdListVM())
-	rootCmd.AddCommand(vm.NewCmdStartVM())
-	rootCmd.AddCommand(vm.NewCmdStopVM())
-	rootCmd.AddCommand(vm.NewCmdNewVM())
-	rootCmd.AddCommand(vm.NewCmddeleteVM())
-	rootCmd.AddCommand(vm.NewCmdSSH())
+	rootCmd.AddCommand(completionCmd,
+		versionCmd,
+		vm.NewCmdListVM(),
+		vm.NewCmdStartVM(),
+		vm.NewCmdStopVM(),
+		vm.NewCmdNewVM(),
+		vm.NewCmddeleteVM(),
+		vm.NewCmdSSH(),
+	)
 }
 
 var rootCmd = &cobra.Command{

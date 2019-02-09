@@ -35,7 +35,7 @@ type VM struct {
 	Name         string
 	Cpus         int
 	Memory       int
-	Interfaces   *[]string
+	Interfaces   []string
 	Disks        []Disk
 	CloudInit    bool
 	RootPassword string
@@ -157,13 +157,13 @@ func NewCmdNewVM() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&diskInfo.BaseImage, "image", "i", "", "Backing image")
 	cmd.Flags().StringVarP(&diskInfo.Format, "format", "f", "qcow2", "Output format: qcow2 or raw.")
-	cmd.Flags().IntVarP(&diskInfo.VirtualSize, "size", "s", 20, "Virtual size for the disk in GiB")
+	cmd.Flags().IntVarP(&diskInfo.VirtualSize, "size", "s", 10, "Virtual size for the disk in GiB")
 	cmd.Flags().IntVarP(&vmInfo.Cpus, "cpu", "c", 1, "Number of vCPUs")
 	cmd.Flags().IntVarP(&vmInfo.Memory, "memory", "m", 1024, "RAM memory in MiB")
 	cmd.Flags().StringVarP(&diskInfo.PoolName, "pool", "p", "default", "Storage pool")
 	cmd.Flags().BoolVar(&vmInfo.CloudInit, "cloud-init", false, "Enable cloud init")
 	cmd.Flags().StringVar(&vmInfo.RootPassword, "password", "", "Root password")
-	vmInfo.Interfaces = cmd.Flags().StringSlice("nets", []string{"default"}, "List of network interfaces")
+	vmInfo.Interfaces = *cmd.Flags().StringSlice("nets", []string{"default"}, "List of network interfaces")
 	cmd.MarkFlagRequired("image")
 	return cmd
 }

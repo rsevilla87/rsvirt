@@ -15,44 +15,12 @@ import (
 )
 
 func CreateVm(vmInfo *VM) error {
-	var xmlPool util.Pool
 	var xmlDef bytes.Buffer
-	info := &VirtInfo
 	diskInfo := &vmInfo.Disks[0]
-
-	// Check if interfaces exist in libvirt
-	for _, n := range *vmInfo.Interfaces {
-		err := info.CheckNetwork(n)
-		if err != nil {
-			return err
-		}
-	}
-	// Check if storage pool exists in libvirt
-	pool, err := info.CheckPool(diskInfo.PoolName)
-	if err != nil {
+	if err := prereqs(vmInfo); err != nil {
 		return err
 	}
-	poolInfo, _ := pool.GetXMLDesc(libvirt.STORAGE_XML_INACTIVE)
-	xml.Unmarshal([]byte(poolInfo), &xmlPool)
-	diskInfo.Pool = pool
-
-	diskFormat, err := GetDiskFormat(diskInfo.Format)
-	if err != nil {
-		return err
-	}
-	// Check if VM name is already defined
-	_, err = rsvirt.GetVM(vmInfo.Name)
-	if err == nil {
-		return fmt.Errorf("VM %s already defined", vmInfo.Name)
-	}
-	vmDisk := path.Join(xmlPool.Target.Path, vmInfo.Name+diskFormat)
-	// Check if destination file exists
-	_, err = os.Stat(vmDisk)
-	if err == nil {
-		return fmt.Errorf("Destination file already exists")
-	}
-	diskInfo.Path = vmDisk
-	err = CreateImage(diskInfo)
+	err := CreateImage(diskInfo)
 	if err != nil {
 		return err
 	}
@@ -79,5 +47,44 @@ func CreateVm(vmInfo *VM) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func prereqs(vmInfo *VM) error {
+	var xmlPool util.Pool
+	info := &VirtInfo
+	diskInfo := &vmInfo.Disks[0]
+	// Check if interfaces exist in libvirt
+	for _, n := range vmInfo.Interfaces {
+		err := info.CheckNetwork(n)
+		if err != nil {
+			return err
+		}
+	}
+	// Check if storage pool exists in libvirt
+	pool, err := info.CheckPool(diskInfo.PoolName)
+	if err != nil {
+		return err
+	}
+	poolInfo, _ := pool.GetXMLDesc(libvirt.STORAGE_XML_INACTIVE)
+	xml.Unmarshal([]byte(poolInfo), &xmlPool)
+	diskInfo.Pool = pool
+	// Check if disk format is defined
+	diskFormat, err := GetDiskFormat(diskInfo.Format)
+	if err != nil {
+		return err
+	}
+	// Check if VM name is already defined
+	_, err = rsvirt.GetVM(vmInfo.Name)
+	if err == nil {
+		return fmt.Errorf("VM %s already defined", vmInfo.Name)
+	}
+	vmDisk := path.Join(xmlPool.Target.Path, vmInfo.Name+diskFormat)
+	// Check if destination file exists
+	_, err = os.Stat(vmDisk)
+	if err == nil {
+		return fmt.Errorf("Destination file already exists")
+	}
+	diskInfo.Path = vmDisk
 	return nil
 }
