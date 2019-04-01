@@ -37,6 +37,7 @@ func init() {
 		vm.NewCmdNewVM(),
 		vm.NewCmddeleteVM(),
 		vm.NewCmdSSH(),
+		vm.NewCmdAddDisk(),
 	)
 }
 

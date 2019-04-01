@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
 
 	libvirt "github.com/libvirt/libvirt-go"
 
+	units "github.com/alecthomas/units"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
@@ -222,10 +224,36 @@ func NewCmdSSH() *cobra.Command {
 	return cmd
 }
 
+func NewCmdAddDisk() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add-disk <vm> <disk-size>",
+		Short: "Adds a disk to a Virtual Machine",
+		Args:  cobra.ExactArgs(2),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			rsvirt.NewConnection("qemu:///system", "libvirt", false)
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			vmName := args[0]
+			vm, err := rsvirt.GetVM(vmName)
+			if err != nil {
+				GenericError(err.Error())
+			}
+			size, err := units.ParseStrictBytes(args[1])
+			if err != nil {
+				GenericError(err.Error())
+			}
+			sizeS := strconv.FormatInt(size, 10)
+			if err := AddDisk(vm, sizeS); err != nil {
+				GenericError(err.Error())
+			}
+		},
+	}
+	return cmd
+}
+
 func logAndExit(msg string) {
 	fmt.Println(msg)
 	os.Exit(0)
-
 }
 
 func GenericError(msg string) {

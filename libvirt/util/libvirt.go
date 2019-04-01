@@ -18,6 +18,8 @@ var VirDomainState = map[libvirt.DomainState]string{
 	libvirt.DOMAIN_SHUTOFF:     "shut off",
 }
 
+// TODO: Add SPICE graphic device
+
 // VMTemplate Virtual machine base template
 var VMTemplate = `<domain type='kvm'>
   <name>{{.Name}}</name>
@@ -138,4 +140,30 @@ type Pool struct {
 			Label string `xml:"label"`
 		} `xml:"permissions"`
 	} `xml:"target"`
+}
+
+type Disk struct {
+	XMLName xml.Name `xml:"disk"`
+	Type    string   `xml:"type,attr"`
+	Device  string   `xml:"device,attr"`
+	Source  Source   `xml:"source"`
+	Driver  Driver   `xml:"driver"`
+	Target  Target   `xml:"target"`
+}
+
+type Driver struct {
+	XMLName xml.Name `xml:"driver"`
+	Name    string   `xml:"name,attr"`
+	Type    string   `xml:"type,attr"`
+}
+
+type Target struct {
+	XMLName xml.Name `xml:"target"`
+	Dev     string   `xml:"dev,attr"`
+	Bus     string   `xml:"bus,attr"`
+}
+
+type Source struct {
+	XMLName xml.Name `xml:"source"`
+	File    string   `xml:"file,attr"`
 }

@@ -13,11 +13,9 @@ import (
 var c *libvirt.Connect
 
 type domain struct {
-	Name   string
-	State  string
-	IP     string
-	Vcpu   string
-	Memory string
+	Name  string
+	State string
+	IP    string
 }
 
 func NewConnection(uri, conType string, ro bool) {
@@ -39,12 +37,21 @@ func List() ([]domain, error) {
 		panic(err)
 	}
 	for _, dom := range doms {
+		var domObj domain
 		name, err := dom.GetName()
-		dom, err := GetVM(name)
+		d, err := GetVM(name)
 		if err != nil {
 			return domList, err
 		}
-		domList = append(domList, dom)
+		domObj.Name, _ = d.GetName()
+		state, _, _ := d.GetState()
+		iface, err := d.ListAllInterfaceAddresses(0)
+		if err == nil && len(iface) > 0 {
+			// Only show the first IP address of the first interface present in the VM
+			domObj.IP = iface[0].Addrs[0].Addr
+		}
+		domObj.State = util.VirDomainState[state]
+		domList = append(domList, domObj)
 	}
 	return domList, nil
 }
@@ -132,19 +139,10 @@ func CreateVm(xmlDef string) (*libvirt.Domain, error) {
 	return dom, nil
 }
 
-func GetVM(domName string) (domain, error) {
-	var domObj domain
+func GetVM(domName string) (*libvirt.Domain, error) {
 	dom, err := c.LookupDomainByName(domName)
 	if err != nil {
-		return domObj, err
+		return nil, err
 	}
-	domObj.Name, _ = dom.GetName()
-	state, _, _ := dom.GetState()
-	iface, err := dom.ListAllInterfaceAddresses(0)
-	if err == nil && len(iface) > 0 {
-		// Only show the first IP address of the first interface present in the VM
-		domObj.IP = iface[0].Addrs[0].Addr
-	}
-	domObj.State = util.VirDomainState[state]
-	return domObj, nil
+	return dom, nil
 }
