@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
+	"github.com/rsevilla87/rsvirt/libvirt/util"
 
 	libvirt "github.com/libvirt/libvirt-go"
 
@@ -225,6 +226,8 @@ func NewCmdSSH() *cobra.Command {
 }
 
 func NewCmdAddDisk() *cobra.Command {
+	var format, bus string
+	var disk util.Disk
 	cmd := &cobra.Command{
 		Use:   "add-disk <vm> <disk-size>",
 		Short: "Adds a disk to a Virtual Machine",
@@ -243,11 +246,17 @@ func NewCmdAddDisk() *cobra.Command {
 				GenericError(err.Error())
 			}
 			sizeS := strconv.FormatInt(size, 10)
-			if err := AddDisk(vm, sizeS); err != nil {
+			disk, err = AddDisk(vm, sizeS, format, bus)
+			if err != nil {
 				GenericError(err.Error())
 			}
+			logAndExit(fmt.Sprintf("Disk %v attached to VM", disk.Source.File))
 		},
 	}
+	flags := cmd.Flags()
+	flags.StringVarP(&format, "format", "f", "qcow2", "Disk format")
+	flags.StringVarP(&bus, "bus", "b", "virtio", "Disk bus")
+
 	return cmd
 }
 

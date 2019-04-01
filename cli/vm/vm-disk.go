@@ -57,32 +57,32 @@ func GetDiskFormat(format string) (string, error) {
 	return "", fmt.Errorf("Unrecognized format: %s", format)
 }
 
-func AddDisk(vm *libvirt.Domain, diskSize string) error {
+// AddDisk Creates and attach disk device to the given domain
+func AddDisk(vm *libvirt.Domain, diskSize, format, bus string) (util.Disk, error) {
 	var d util.Domain
 	dxml, _ := vm.GetXMLDesc(0)
 	xml.Unmarshal([]byte(dxml), &d)
 	lastDiskPath := d.Devices.Disk[0].Source.File
 	lastDiskDev := d.Devices.Disk[len(d.Devices.Disk)-1].Target.Dev
-	rootDiskBus := d.Devices.Disk[0].Target.Bus
-	diskPath := genDiskPath(lastDiskPath)
-	diskxml := util.Disk{
+	diskPath := genDiskPath(lastDiskPath, format)
+	diskObj := util.Disk{
 		Device: "disk",
 		Type:   "file",
 		Driver: util.Driver{
 			Name: "qemu",
-			Type: "qcow2",
+			Type: format,
 		},
 		Source: util.Source{
 			File: diskPath,
 		},
 		Target: util.Target{
-			Bus: rootDiskBus,
+			Bus: bus,
 			Dev: genNextDisk(lastDiskDev),
 		},
 	}
-	disk, _ := xml.MarshalIndent(diskxml, "", " ")
-	if err := createDisk(diskPath, diskSize); err != nil {
-		return err
+	disk, _ := xml.MarshalIndent(diskObj, "", " ")
+	if err := createDisk(diskPath, diskSize, format); err != nil {
+		return diskObj, err
 	}
 	flags := libvirt.DOMAIN_DEVICE_MODIFY_CONFIG
 	if active, _ := vm.IsActive(); active {
@@ -90,16 +90,16 @@ func AddDisk(vm *libvirt.Domain, diskSize string) error {
 	}
 	err := vm.AttachDeviceFlags(string(disk), flags)
 	if err != nil {
-		return err
+		return diskObj, err
 	}
-	return nil
+	return diskObj, nil
 }
 
-func createDisk(p string, s string) error {
+func createDisk(p string, s, f string) error {
 	var args []string
 	args = append(args, "create")
 	args = append(args, "-f")
-	args = append(args, "qcow2")
+	args = append(args, f)
 	args = append(args, p)
 	args = append(args, s)
 	if err := cliutil.CmdExecutor(QEMU_IMG, args); err != nil {
@@ -115,9 +115,9 @@ func genNextDisk(name string) string {
 	return diskName
 }
 
-func genDiskPath(lastDiskPath string) string {
+func genDiskPath(lastDiskPath, format string) string {
 	epoch := time.Now().Unix()
 	ext := filepath.Ext(lastDiskPath)
 	diskPath := lastDiskPath[0 : len(lastDiskPath)-len(ext)]
-	return diskPath + "-" + strconv.FormatInt(epoch, 10) + ext
+	return diskPath + "-" + strconv.FormatInt(epoch, 10) + "." + format
 }
