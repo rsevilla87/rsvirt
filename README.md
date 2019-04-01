@@ -3,6 +3,8 @@
 Rsvirt is a tool focused in providing a set of shortcuts for libvirt. These shortcuts are aimed to improve our productivity and avoid dealing with tasks like:
 
 - Create VMs based in *Copy-On-Write* disks
+- Attach disks to guests
+- Guest's power management
 - SSH guests
 
 ```
@@ -17,6 +19,7 @@ Usage:
   rsvirt [command]
 
 Available Commands:
+  add-disk    Adds a disk to a Virtual Machine
   completion  Generates bash completion scripts
   create      Create a new Virtual Machine
   delete      Delete Virtual Machines
