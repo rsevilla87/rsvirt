@@ -97,9 +97,9 @@ func Stop(d string, force bool) error {
 		return err
 	}
 	if force {
-		err = dom.Destroy()
+		err = dom.DestroyFlags(libvirt.DOMAIN_DESTROY_DEFAULT)
 	} else {
-		err = dom.Shutdown()
+		err = dom.ShutdownFlags(0)
 	}
 	if err != nil {
 		return err

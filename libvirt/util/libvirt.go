@@ -47,14 +47,19 @@ var VMTemplate = `<domain type='kvm'>
     <serial type='pty'>
     </serial>
     <console type='pty'>
-    </console>
+		</console>
+		<channel type='unix'>
+		  <target type='virtio' name='org.qemu.guest_agent.0'/>
+    </channel>
     <input type='mouse' bus='ps2'/>
     <input type='keyboard' bus='ps2'/>
     <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1' keymap='en-us'>
       <listen type='address' address='127.0.0.1'/>
-    </graphics>
+		</graphics>
+		<graphics type='spice' autoport='yes'>
+		</graphics>
     <video>
-      <model type='virtio' heads='1' primary='yes'>
+      <model type='virtio'>
       </model>
     </video>
   </devices>
