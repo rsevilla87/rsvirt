@@ -25,6 +25,7 @@ Available Commands:
   delete      Delete Virtual Machines
   help        Help about any command
   list        List Virtual Machines
+  show        Show Virtual Machine information
   ssh         SSH to Virtual Machine
   start       Start Virtual Machines
   stop        Stop Virtual Machines
