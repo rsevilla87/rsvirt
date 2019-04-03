@@ -2,6 +2,7 @@ package vm
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"os"
 	"strconv"
@@ -71,8 +72,7 @@ func NewCmdListVM() *cobra.Command {
 			}
 			if output == "json" {
 				j, _ := json.Marshal(domList)
-				fmt.Println(string(j))
-				os.Exit(0)
+				logAndExit(string(j))
 			}
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Domain", "State", "IP Address"})
@@ -256,7 +256,49 @@ func NewCmdAddDisk() *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&format, "format", "f", "qcow2", "Disk format")
 	flags.StringVarP(&bus, "bus", "b", "virtio", "Disk bus")
+	return cmd
+}
 
+func NewCmdVmInfo() *cobra.Command {
+	var domObj util.Domain
+	head := []string{"Domain", "vCPUs", "Memory"}
+	cmd := &cobra.Command{
+		Use:   "show",
+		Short: "Show Virtual Machine information",
+		Args:  cobra.ExactArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			rsvirt.NewConnection("qemu:///system", "libvirt", true)
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			dom, err := rsvirt.GetVM(args[0])
+			if err != nil {
+				GenericError(err.Error())
+			}
+			domXML, _ := dom.GetXMLDesc(0)
+			if err = xml.Unmarshal([]byte(domXML), &domObj); err != nil {
+				GenericError(err.Error())
+			}
+			domInfo := []string{
+				domObj.Name,
+				domObj.Vcpu.Text,
+				fmt.Sprintf("%v %v", domObj.Memory.Text, domObj.Memory.Unit)}
+			table := tablewriter.NewWriter(os.Stdout)
+			ifaces, err := dom.ListAllInterfaceAddresses(0)
+			if err == nil && len(ifaces) > 0 {
+				var ips string
+				for n, iface := range ifaces {
+					head = append(head, fmt.Sprintf("NIC %v", n))
+					for _, ip := range iface.Addrs {
+						ips += ip.Addr
+					}
+					domInfo = append(domInfo, ips)
+				}
+			}
+			table.SetHeader(head)
+			table.Append(domInfo)
+			table.Render()
+		},
+	}
 	return cmd
 }
 
