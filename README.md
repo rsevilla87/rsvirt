@@ -32,6 +32,7 @@ Available Commands:
   version     Print the version number of rsvirt
 
 Flags:
+  -c, --connect string   Hypervisor connection URI (default "qemu:///system")
   -h, --help   help for rsvirt
 
 Use "rsvirt [command] --help" for more information about a command.
