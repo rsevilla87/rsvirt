@@ -26,7 +26,7 @@ func CreateVm(vmInfo *VM) error {
 	}
 	if !vmInfo.CloudInit {
 		if err := diskInfo.DisableCI(); err != nil {
-			diskInfo.DeleteDisk()
+			DeleteDisk(diskInfo.Path)
 			return err
 		}
 	}
@@ -80,7 +80,7 @@ func prereqs(vmInfo *VM) error {
 	// Check if VM name is already defined
 	_, err = rsvirt.GetVM(vmInfo.Name)
 	if err == nil {
-		return fmt.Errorf("VM %s already defined", vmInfo.Name)
+		return fmt.Errorf("A VM named %s is already defined", vmInfo.Name)
 	}
 	vmDisk := path.Join(diskInfo.Pool.Path, vmInfo.Name+diskFormat)
 	// Check if destination file exists

@@ -90,6 +90,7 @@ func AddDisk(vm *libvirt.Domain, diskSize, format, bus string) (util.Disk, error
 	}
 	err := vm.AttachDeviceFlags(string(disk), flags)
 	if err != nil {
+		DeleteDisk(diskPath)
 		return diskObj, err
 	}
 	return diskObj, nil
@@ -120,4 +121,11 @@ func genDiskPath(lastDiskPath, format string) string {
 	ext := filepath.Ext(lastDiskPath)
 	diskPath := lastDiskPath[0 : len(lastDiskPath)-len(ext)]
 	return diskPath + "-" + strconv.FormatInt(epoch, 10) + "." + format
+}
+
+func DeleteDisk(path string) {
+	err := os.Remove(path)
+	if err != nil {
+		fmt.Printf("Failed while deleting disk: %s", err.Error())
+	}
 }

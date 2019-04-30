@@ -57,7 +57,9 @@ func NewCmdListVM() *cobra.Command {
 		Use:   "list",
 		Short: "List Virtual Machines",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", true)
+			p := cmd.Parent()
+			c, _ := p.Flags().GetString("connect")
+			rsvirt.NewConnection(c, "libvirt", true)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			domList, err := rsvirt.List()
@@ -93,7 +95,9 @@ func NewCmdStartVM() *cobra.Command {
 		Short: "Start Virtual Machines",
 		Args:  cobra.MinimumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", false)
+			p := cmd.Parent()
+			c, _ := p.Flags().GetString("connect")
+			rsvirt.NewConnection(c, "libvirt", false)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			for _, d := range args {
@@ -113,7 +117,9 @@ func NewCmdStopVM() *cobra.Command {
 		Short: "Stop Virtual Machines",
 		Args:  cobra.MinimumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", false)
+			p := cmd.Parent()
+			c, _ := p.Flags().GetString("connect")
+			rsvirt.NewConnection(c, "libvirt", false)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			for _, d := range args {
@@ -135,7 +141,9 @@ func NewCmddeleteVM() *cobra.Command {
 		Short: "Delete Virtual Machines",
 		Args:  cobra.MinimumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", false)
+			p := cmd.Parent()
+			c, _ := p.Flags().GetString("connect")
+			rsvirt.NewConnection(c, "libvirt", false)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
@@ -164,7 +172,9 @@ func NewCmdNewVM() *cobra.Command {
 		Short: "Create a new Virtual Machine",
 		Args:  cobra.ExactArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", false)
+			p := cmd.Parent()
+			c, _ := p.Flags().GetString("connect")
+			rsvirt.NewConnection(c, "libvirt", false)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) != 1 {
@@ -203,7 +213,9 @@ func NewCmdSSH() *cobra.Command {
 		Short: "SSH to Virtual Machine",
 		Args:  cobra.ExactArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", true)
+			p := cmd.Parent()
+			c, _ := p.Flags().GetString("connect")
+			rsvirt.NewConnection(c, "libvirt", true)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			vmName := args[0]
@@ -233,7 +245,9 @@ func NewCmdAddDisk() *cobra.Command {
 		Short: "Adds a disk to a Virtual Machine",
 		Args:  cobra.ExactArgs(2),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", false)
+			p := cmd.Parent()
+			c, _ := p.Flags().GetString("connect")
+			rsvirt.NewConnection(c, "libvirt", false)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			vmName := args[0]
@@ -267,7 +281,9 @@ func NewCmdVmInfo() *cobra.Command {
 		Short: "Show Virtual Machine information",
 		Args:  cobra.ExactArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			rsvirt.NewConnection("qemu:///system", "libvirt", true)
+			p := cmd.Parent()
+			c, _ := p.Flags().GetString("connect")
+			rsvirt.NewConnection(c, "libvirt", true)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			dom, err := rsvirt.GetVM(args[0])

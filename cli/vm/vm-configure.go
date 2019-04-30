@@ -17,7 +17,7 @@ func (diskInfo *Disk) DisableCI() error {
 	go func() {
 		<-s
 		fmt.Println("Interrupted operation, cleaning up")
-		diskInfo.DeleteDisk()
+		DeleteDisk(diskInfo.Path)
 		os.Exit(1)
 	}()
 	var args []string
@@ -42,11 +42,4 @@ func (diskInfo *Disk) RootPassword(password string) error {
 		return err
 	}
 	return nil
-}
-
-func (diskInfo *Disk) DeleteDisk() {
-	err := os.Remove(diskInfo.Path)
-	if err != nil {
-		fmt.Printf("Failed while deleting disk: %s", err.Error())
-	}
 }

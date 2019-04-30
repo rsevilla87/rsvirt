@@ -43,8 +43,9 @@ func init() {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   progName,
-	Short: "Perform fast actions over libvirt based VMs",
+	Use:              progName,
+	Short:            "Perform fast actions over libvirt based VMs",
+	TraverseChildren: true,
 	Long: `This CLI tool acts as a wrapper over libvirt.
 
 Similar to other tools like virsh but providing some shortcuts to the
@@ -67,9 +68,7 @@ To configure your bash shell to load completions for each session add to your ba
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		switch {
-		case len(args) == 0:
-			return rootCmd.GenBashCompletion(os.Stdout)
-		case args[0] == "bash":
+		case len(args) == 0 || args[0] == "bash":
 			return rootCmd.GenBashCompletion(os.Stdout)
 		case args[0] == "zsh":
 			return runCompletionZsh(os.Stdout, rootCmd)
@@ -95,6 +94,9 @@ var versionCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	var uri string
+	flags := rootCmd.Flags()
+	flags.StringVarP(&uri, "connect", "c", "qemu:///system", "Hypervisor connection URI")
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
