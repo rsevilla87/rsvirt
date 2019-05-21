@@ -42,13 +42,16 @@ type Pool struct {
 }
 
 type VM struct {
-	Name         string
-	Cpus         int
-	Memory       int
-	Interfaces   []string
-	Disks        []Disk
-	CloudInit    bool
-	RootPassword string
+	Name            string
+	Cpus            int
+	Memory          int
+	Interfaces      []string
+	Disks           []Disk
+	CloudInit       bool
+	RootPassword    string
+	SSHUser         string
+	PublicKey       string
+	FirstBootScript string
 }
 
 func NewCmdListVM() *cobra.Command {
@@ -187,8 +190,7 @@ func NewCmdNewVM() *cobra.Command {
 			if err := CreateVm(&vmInfo); err != nil {
 				GenericError(err.Error())
 			}
-			j, _ := json.Marshal(vmInfo)
-			logAndExit(string(j))
+			logAndExit(fmt.Sprintf("VM %s created successfully", vmInfo.Name))
 		},
 	}
 	flags := cmd.Flags()
@@ -200,6 +202,9 @@ func NewCmdNewVM() *cobra.Command {
 	flags.StringVarP(&diskInfo.PoolName, "pool", "p", "default", "Storage pool")
 	flags.BoolVar(&vmInfo.CloudInit, "cloud-init", false, "Enable cloud init")
 	flags.StringVar(&vmInfo.RootPassword, "password", "", "Root password")
+	flags.StringVar(&vmInfo.SSHUser, "ssh-user", "root", "Inject given SSH public key to the given user")
+	flags.StringVar(&vmInfo.PublicKey, "public-key", "", "Public key")
+	flags.StringVar(&vmInfo.FirstBootScript, "first-boot", "", "First boot script path")
 	flags.StringSliceVar(&vmInfo.Interfaces, "nets", []string{"default"}, "List of network interfaces")
 	cmd.MarkFlagRequired("image")
 	return cmd
@@ -283,7 +288,7 @@ func NewCmdVmInfo() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", true)
+			rsvirt.NewConnection(c, "libvirt", false)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			dom, err := rsvirt.GetVM(args[0])
@@ -291,6 +296,10 @@ func NewCmdVmInfo() *cobra.Command {
 				GenericError(err.Error())
 			}
 			domXML, _ := dom.GetXMLDesc(0)
+			//mem, _ := dom.CPU(5, 0)
+			// MemoryStats
+			// CPUStats
+			// NetworkStats
 			if err = xml.Unmarshal([]byte(domXML), &domObj); err != nil {
 				GenericError(err.Error())
 			}

@@ -16,24 +16,35 @@ import (
 
 func CreateVm(vmInfo *VM) error {
 	var xmlDef bytes.Buffer
+	var customArgs []string
 	diskInfo := &vmInfo.Disks[0]
 	if err := prereqs(vmInfo); err != nil {
 		return err
 	}
-	err := CreateImage(diskInfo)
-	if err != nil {
+	if err := CreateImage(diskInfo); err != nil {
 		return err
 	}
+
+	// Customizations
 	if !vmInfo.CloudInit {
-		if err := diskInfo.DisableCI(); err != nil {
-			DeleteDisk(diskInfo.Path)
-			return err
-		}
+		diskInfo.disableCI(&customArgs)
 	}
 	if vmInfo.RootPassword != "" {
-		if err := diskInfo.RootPassword(vmInfo.RootPassword); err != nil {
+		diskInfo.setRootPwd(&customArgs, vmInfo.RootPassword)
+	}
+	if vmInfo.PublicKey != "" {
+		if err := diskInfo.setPK(&customArgs, vmInfo.SSHUser, vmInfo.PublicKey); err != nil {
 			fmt.Println(err.Error())
 		}
+	}
+	if vmInfo.FirstBootScript != "" {
+		if err := diskInfo.setFB(&customArgs, vmInfo.FirstBootScript); err != nil {
+			fmt.Println(err.Error())
+		}
+	}
+	if err := diskInfo.customize(&customArgs); err != nil {
+		DeleteDisk(diskInfo.Path)
+		return err
 	}
 	t, err := template.New("vm").Parse(util.VMTemplate)
 	if err != nil {

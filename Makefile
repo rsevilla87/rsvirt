@@ -27,6 +27,9 @@ run: build
 test:
 	$(GOTEST)
 
+install:
+	cp bin/${BINARY} /usr/bin/
+
 get-deps:
 ifeq ($(shell command -v dep 2> /dev/null),)
 	go get -u -v github.com/golang/dep/cmd/dep

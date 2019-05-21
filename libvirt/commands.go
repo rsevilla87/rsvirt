@@ -10,7 +10,7 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-var c *libvirt.Connect
+var C *libvirt.Connect
 
 type domain struct {
 	Name  string
@@ -21,9 +21,9 @@ type domain struct {
 func NewConnection(uri, conType string, ro bool) {
 	var err error
 	if ro {
-		c, err = libvirt.NewConnectReadOnly(uri)
+		C, err = libvirt.NewConnectReadOnly(uri)
 	} else {
-		c, err = libvirt.NewConnect(uri)
+		C, err = libvirt.NewConnect(uri)
 	}
 	if err != nil {
 		panic(err)
@@ -31,7 +31,7 @@ func NewConnection(uri, conType string, ro bool) {
 }
 
 func List() ([]domain, error) {
-	doms, err := c.ListAllDomains(libvirt.CONNECT_LIST_DOMAINS_INACTIVE | libvirt.CONNECT_LIST_DOMAINS_ACTIVE)
+	doms, err := C.ListAllDomains(libvirt.CONNECT_LIST_DOMAINS_INACTIVE | libvirt.CONNECT_LIST_DOMAINS_ACTIVE)
 	var domList []domain
 	if err != nil {
 		panic(err)
@@ -59,7 +59,7 @@ func List() ([]domain, error) {
 // ListAllNetworks List all networks available in libvirt
 func ListAllNetworks() []string {
 	var netSlice []string
-	nets, err := c.ListAllNetworks(libvirt.CONNECT_LIST_NETWORKS_ACTIVE | libvirt.CONNECT_LIST_NETWORKS_INACTIVE)
+	nets, err := C.ListAllNetworks(libvirt.CONNECT_LIST_NETWORKS_ACTIVE | libvirt.CONNECT_LIST_NETWORKS_INACTIVE)
 	if err != nil {
 		panic(err)
 	}
@@ -75,13 +75,13 @@ func ListAllNetworks() []string {
 
 // ListAllStoragePools List all storage pools available in libvirt
 func GetAllStoragePools() []libvirt.StoragePool {
-	pools, _ := c.ListAllStoragePools(libvirt.CONNECT_LIST_STORAGE_POOLS_ACTIVE | libvirt.CONNECT_LIST_STORAGE_POOLS_INACTIVE)
+	pools, _ := C.ListAllStoragePools(libvirt.CONNECT_LIST_STORAGE_POOLS_ACTIVE | libvirt.CONNECT_LIST_STORAGE_POOLS_INACTIVE)
 	return pools
 }
 
 // Start Starts a domain
 func Start(d string) error {
-	dom, err := c.LookupDomainByName(d)
+	dom, err := C.LookupDomainByName(d)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func Start(d string) error {
 }
 
 func Stop(d string, force bool) error {
-	dom, err := c.LookupDomainByName(d)
+	dom, err := C.LookupDomainByName(d)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func Stop(d string, force bool) error {
 
 func Delete(d string) error {
 	var domain util.Domain
-	dom, err := c.LookupDomainByName(d)
+	dom, err := C.LookupDomainByName(d)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func Delete(d string) error {
 
 func CreateVm(xmlDef string) (*libvirt.Domain, error) {
 	var dom *libvirt.Domain
-	dom, err := c.DomainDefineXML(xmlDef)
+	dom, err := C.DomainDefineXML(xmlDef)
 	dom.Create()
 	if err != nil {
 		return dom, err
@@ -140,7 +140,7 @@ func CreateVm(xmlDef string) (*libvirt.Domain, error) {
 }
 
 func GetVM(domName string) (*libvirt.Domain, error) {
-	dom, err := c.LookupDomainByName(domName)
+	dom, err := C.LookupDomainByName(domName)
 	if err != nil {
 		return nil, err
 	}
