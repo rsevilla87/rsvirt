@@ -52,10 +52,11 @@ Running it then should be as simple as:
 
 ```console
 $ make
-$ ./bin/rsvirt
+$ make install
+$ rsvirt -h
 ```
 
-## Building on *nix
+## Building on Linux
 Make sure you have installed the dependencies:
 
 - `golang` 1.9 or later
@@ -64,6 +65,16 @@ Make sure you have installed the dependencies:
 - `git`
 - `dep`
 
-### Testing
+## Testing
 
 ``make test``
+
+## Completion
+
+Bash completion:
+
+`. <(rsvirt completion bash)`
+
+ZSH completion:
+
+`. <(rsvirt completion zsh)`
