@@ -5,7 +5,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"os/signal"
 	"path"
+	"syscall"
 	"text/template"
 
 	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
@@ -14,43 +16,49 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-func CreateVm(vmInfo *VM) error {
+func CreateVm(vm *VM) error {
 	var xmlDef bytes.Buffer
 	var customArgs []string
-	diskInfo := &vmInfo.Disks[0]
-	if err := prereqs(vmInfo); err != nil {
+	if err := prereqs(vm); err != nil {
 		return err
 	}
-	if err := CreateImage(diskInfo); err != nil {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		sig := <-c
+		fmt.Printf("Received %v signal\nRemoving disk %v\n", sig, vm.Disks[0].Path)
+		os.Remove(vm.Disks[0].Path)
+	}()
+	if err := CreateImage(&vm.Disks[0]); err != nil {
 		return err
 	}
 
 	// Customizations
-	if !vmInfo.CloudInit {
-		diskInfo.disableCI(&customArgs)
+	if !vm.CloudInit {
+		vm.disableCI(&customArgs)
 	}
-	if vmInfo.RootPassword != "" {
-		diskInfo.setRootPwd(&customArgs, vmInfo.RootPassword)
+	if vm.RootPassword != "" {
+		vm.setRootPwd(&customArgs, vm.RootPassword)
 	}
-	if vmInfo.PublicKey != "" {
-		if err := diskInfo.setPK(&customArgs, vmInfo.SSHUser, vmInfo.PublicKey); err != nil {
+	if vm.PublicKey != "" {
+		if err := vm.setPK(&customArgs, vm.SSHUser, vm.PublicKey); err != nil {
 			fmt.Println(err.Error())
 		}
 	}
-	if vmInfo.FirstBootScript != "" {
-		if err := diskInfo.setFB(&customArgs, vmInfo.FirstBootScript); err != nil {
+	if vm.FirstBootScript != "" {
+		if err := vm.setFB(&customArgs, vm.FirstBootScript); err != nil {
 			fmt.Println(err.Error())
 		}
 	}
-	if err := diskInfo.customize(&customArgs); err != nil {
-		DeleteDisk(diskInfo.Path)
+	if err := vm.customize(&customArgs); err != nil {
+		DeleteDisk(vm.Disks[0].Path)
 		return err
 	}
 	t, err := template.New("vm").Parse(util.VMTemplate)
 	if err != nil {
 		return err
 	}
-	err = t.Execute(&xmlDef, vmInfo)
+	err = t.Execute(&xmlDef, vm)
 	if err != nil {
 		return err
 	}
