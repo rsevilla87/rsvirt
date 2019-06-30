@@ -7,6 +7,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
+
+	yaml "gopkg.in/yaml.v2"
 
 	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
 	"github.com/rsevilla87/rsvirt/libvirt/util"
@@ -69,15 +72,26 @@ func NewCmdListVM() *cobra.Command {
 			if err != nil {
 				GenericError(err.Error())
 			}
-			if output == "simple" {
-				for _, dom := range domList {
-					fmt.Printf("%s ", dom.Name)
-				}
-				os.Exit(0)
-			}
 			if output == "json" {
 				j, _ := json.Marshal(domList)
 				logAndExit(string(j))
+			}
+			if output == "yaml" {
+				y, _ := yaml.Marshal(domList)
+				logAndExit(string(y))
+			}
+			if output == "template" {
+				if len(args) != 1 {
+					GenericError("Invalid number of args")
+				}
+				t, err := template.New("domains").Parse(args[0])
+				if err != nil {
+					GenericError(err.Error())
+				}
+				if err = t.Execute(os.Stdout, domList); err != nil {
+					GenericError(err.Error())
+				}
+				os.Exit(0)
 			}
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Domain", "State", "IP Address"})
@@ -88,7 +102,7 @@ func NewCmdListVM() *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&output, "output", "o", "", "Output format: simple or json")
+	flags.StringVarP(&output, "output", "o", "", "Output format: yaml, json or template")
 	return cmd
 }
 

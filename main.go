@@ -42,6 +42,32 @@ func init() {
 	)
 }
 
+const (
+	bashCompletionFunc = `__rsvirt_get_resource() {
+	local template
+	template="${2:-"{{ range .  }}{{ .Name }} {{ end }}"}"
+	local rsvirt_out
+	if rsvirt_out=$(rsvirt list -o template "${template}"); then
+		COMPREPLY=( $( compgen -W "${rsvirt_out[*]}" -- "$cur" ) )
+	fi
+}
+
+__rsvirt_get_resource_vm() {
+	__rsvirt_get_resource "vm"
+}
+
+__rsvirt_custom_func() {
+	case ${last_command} in
+		rsvirt_delete | rsvirt_start | rsvirt_stop | rsvirt_ssh | rsvirt_show | rsvirt_add-disk)
+			__rsvirt_get_resource_vm
+			return
+			;;
+		*)
+			;;
+	esac
+}`
+)
+
 var rootCmd = &cobra.Command{
 	Use:              progName,
 	Short:            "Perform fast actions over libvirt based VMs",
@@ -51,6 +77,7 @@ var rootCmd = &cobra.Command{
 Similar to other tools like virsh but providing some shortcuts to the
 most common tasks, like creating VMs from base images or attaching
 several nics to a VM at creation time`,
+	BashCompletionFunction: bashCompletionFunc,
 }
 
 var completionCmd = &cobra.Command{
