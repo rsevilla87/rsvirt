@@ -11,7 +11,7 @@ GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test -v
 
-all: build
+all: build install
 
 build: get-deps vendor
 	@echo "building ${BINARY} ${VERSION}"
