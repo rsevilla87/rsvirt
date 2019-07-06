@@ -1,7 +1,7 @@
 .PHONY: all test help build get-deps
 
 BINARY=rsvirt
-
+GO_PKG=github.com/rsevilla87/rsvirt
 VERSION := $(shell grep "const Version " version/version.go | sed -E 's/.*"(.+)"$$/\1/')
 BUILD_DATE=$(shell date '+%Y-%m-%d-%H:%M:%S')
 GIT_COMMIT=$(shell git rev-parse HEAD)
@@ -10,13 +10,13 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test -v
-CGO=0
+GO_BUILD_RECIPE=GOOS=linux CGO_ENABLED=0 go build -ldflags="-X $(GO_PKG)/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X ${GO_PKG}/version.BuildDate=${BUILD_DATE}"
 
 all: build
 
 build: get-deps vendor 
 	@echo "building ${BINARY} ${VERSION}"
-	CGO_ENABLED=${CGO} $(GOBUILD)  -ldflags "-X github.com/rsevilla87/rsvirt/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/rsevilla87/rsvirt/version.BuildDate=${BUILD_DATE} -s" -o bin/${BINARY}
+	${GO_BUILD_RECIPE} -o bin/${BINARY}
 
 clean:
 	$(GOCLEAN)
@@ -31,7 +31,7 @@ test:
 install:
 	cp bin/${BINARY} /usr/bin/
 
-get-deps:
+get-deps: vendor
 ifeq ($(shell command -v dep 2> /dev/null),)
 	go get -u -v github.com/golang/dep/cmd/dep
 endif

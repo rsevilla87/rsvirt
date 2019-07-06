@@ -76,14 +76,11 @@ func StopDomain(d string, force bool) error {
 		return err
 	}
 	if force {
-
 		err = L.DomainDestroyFlags(dom, libvirt.DomainDestroyDefault)
 	} else {
 		L.Shutdown(dom.Name, 0)
-
 	}
 	if err != nil {
-
 		return err
 	}
 	return nil
@@ -121,7 +118,6 @@ func CreateDomain(xmlDef string) (libvirt.Domain, error) {
 		return dom, err
 	}
 	return dom, StartDomain(dom.Name)
-
 }
 
 // ListAllNetworks List all networks available in libvirt
