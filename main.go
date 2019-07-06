@@ -123,7 +123,7 @@ var versionCmd = &cobra.Command{
 func Execute() {
 	var uri string
 	flags := rootCmd.Flags()
-	flags.StringVarP(&uri, "connect", "c", "qemu:///system", "Hypervisor connection URI")
+	flags.StringVarP(&uri, "connect", "c", "/var/run/libvirt/libvirt-sock", "Hypervisor connection URI")
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

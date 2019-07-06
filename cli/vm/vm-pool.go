@@ -1,18 +1,15 @@
 package vm
 
 import (
-	"fmt"
-
-	libvirt "github.com/libvirt/libvirt-go"
+	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
 )
 
-func (info *virtInfo) CheckPool(pool string) (libvirt.StoragePool, error) {
-	var storagePool libvirt.StoragePool
-	for _, p := range info.pools {
-		poolName, _ := p.GetName()
-		if poolName == pool {
-			return p, nil
-		}
+func (info *virtInfo) CheckPool(name string) (string, error) {
+	pool, err := rsvirt.L.StoragePoolLookupByName(name)
+	if err != nil {
+		return "", err
 	}
-	return storagePool, fmt.Errorf("Storage pool %s not found", pool)
+	poolXML, _ := rsvirt.L.StoragePoolGetXMLDesc(pool, 0)
+
+	return poolXML, nil
 }

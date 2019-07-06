@@ -12,14 +12,13 @@ import (
 func SSH(vm, user, sshOpts string) error {
 	var args []string
 	var ip string
-	d, err := rsvirt.GetVM(vm)
+	d, err := rsvirt.GetDomain(vm)
 	if err != nil {
 		return err
 	}
-	iface, err := d.ListAllInterfaceAddresses(0)
-	if err == nil && len(iface) > 0 {
-		// Only show the first IP address of the first interface present in the VM
-		ip = iface[0].Addrs[0].Addr
+	nics, err := rsvirt.L.DomainInterfaceAddresses(d, 0, 0)
+	if err == nil && len(nics) > 0 {
+		ip = nics[0].Addrs[0].Addr
 	}
 	if ip == "" {
 		return fmt.Errorf("VM %s doesn't have IP", vm)

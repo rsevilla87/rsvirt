@@ -8,7 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
+	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
 
 	cliutil "github.com/rsevilla87/rsvirt/cli/cli-util"
 	"github.com/rsevilla87/rsvirt/libvirt/util"
@@ -58,10 +59,10 @@ func GetDiskFormat(format string) (string, error) {
 }
 
 // AddDisk Creates and attach disk device to the given domain
-func AddDisk(vm *libvirt.Domain, diskSize, format, bus string) (util.Disk, error) {
+func AddDisk(dom libvirt.Domain, diskSize, format, bus string) (util.Disk, error) {
+	dXML, _ := rsvirt.L.DomainGetXMLDesc(dom, 0)
 	var d util.Domain
-	dxml, _ := vm.GetXMLDesc(0)
-	xml.Unmarshal([]byte(dxml), &d)
+	xml.Unmarshal([]byte(dXML), &d)
 	lastDiskPath := d.Devices.Disk[0].Source.File
 	lastDiskDev := d.Devices.Disk[len(d.Devices.Disk)-1].Target.Dev
 	diskPath := genDiskPath(lastDiskPath, format)
@@ -84,11 +85,11 @@ func AddDisk(vm *libvirt.Domain, diskSize, format, bus string) (util.Disk, error
 	if err := createDisk(diskPath, diskSize, format); err != nil {
 		return diskObj, err
 	}
-	flags := libvirt.DOMAIN_DEVICE_MODIFY_CONFIG
-	if active, _ := vm.IsActive(); active {
-		flags = libvirt.DOMAIN_DEVICE_MODIFY_LIVE | libvirt.DOMAIN_DEVICE_MODIFY_CONFIG
+	flags := libvirt.DomainDeviceModifyConfig
+	if _, err := rsvirt.L.DomainIsActive(dom); err == nil {
+		flags = libvirt.DomainDeviceModifyLive | libvirt.DomainDeviceModifyConfig
 	}
-	err := vm.AttachDeviceFlags(string(disk), flags)
+	err := rsvirt.L.DomainAttachDeviceFlags(dom, string(disk), uint32(flags))
 	if err != nil {
 		DeleteDisk(diskPath)
 		return diskObj, err

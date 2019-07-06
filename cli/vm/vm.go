@@ -14,7 +14,7 @@ import (
 	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
 	"github.com/rsevilla87/rsvirt/libvirt/util"
 
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
 
 	units "github.com/alecthomas/units"
 	"github.com/olekukonko/tablewriter"
@@ -65,10 +65,10 @@ func NewCmdListVM() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", true)
+			rsvirt.NewConnection(c, "unix")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			domList, err := rsvirt.List()
+			domList, err := rsvirt.ListDomains()
 			if err != nil {
 				GenericError(err.Error())
 			}
@@ -96,7 +96,7 @@ func NewCmdListVM() *cobra.Command {
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Domain", "State", "IP Address"})
 			for _, d := range domList {
-				table.Append([]string{d.Name, d.State, d.IP})
+				table.Append([]string{d.Name, d.State, d.IPs})
 			}
 			table.Render()
 		},
@@ -114,11 +114,11 @@ func NewCmdStartVM() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", false)
+			rsvirt.NewConnection(c, "unix")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			for _, d := range args {
-				if err := rsvirt.Start(d); err != nil {
+				if err := rsvirt.StartDomain(d); err != nil {
 					fmt.Println(err.Error())
 				}
 			}
@@ -136,11 +136,11 @@ func NewCmdStopVM() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", false)
+			rsvirt.NewConnection(c, "unix")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			for _, d := range args {
-				if err := rsvirt.Stop(d, force); err != nil {
+				if err := rsvirt.StopDomain(d, force); err != nil {
 					fmt.Println(err.Error())
 				}
 			}
@@ -160,12 +160,12 @@ func NewCmddeleteVM() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", false)
+			rsvirt.NewConnection(c, "unix")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
 				for _, d := range args {
-					if err := rsvirt.Delete(d); err != nil {
+					if err := rsvirt.DeleteDomain(d); err != nil {
 						fmt.Println(err.Error())
 					}
 				}
@@ -191,7 +191,7 @@ func NewCmdNewVM() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", false)
+			rsvirt.NewConnection(c, "unix")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) != 1 {
@@ -234,7 +234,7 @@ func NewCmdSSH() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", true)
+			rsvirt.NewConnection(c, "unix")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			vmName := args[0]
@@ -266,11 +266,11 @@ func NewCmdAddDisk() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", false)
+			rsvirt.NewConnection(c, "unix")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			vmName := args[0]
-			vm, err := rsvirt.GetVM(vmName)
+			vm, err := rsvirt.GetDomain(vmName)
 			if err != nil {
 				GenericError(err.Error())
 			}
@@ -302,14 +302,14 @@ func NewCmdVmInfo() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			p := cmd.Parent()
 			c, _ := p.Flags().GetString("connect")
-			rsvirt.NewConnection(c, "libvirt", false)
+			rsvirt.NewConnection(c, "unix")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			dom, err := rsvirt.GetVM(args[0])
+			dom, err := rsvirt.GetDomain(args[0])
 			if err != nil {
 				GenericError(err.Error())
 			}
-			domXML, _ := dom.GetXMLDesc(0)
+			domXML, _ := rsvirt.L.DomainGetXMLDesc(dom, 0)
 			//mem, _ := dom.CPU(5, 0)
 			// MemoryStats
 			// CPUStats
@@ -322,10 +322,10 @@ func NewCmdVmInfo() *cobra.Command {
 				domObj.Vcpu.Text,
 				fmt.Sprintf("%v %v", domObj.Memory.Text, domObj.Memory.Unit)}
 			table := tablewriter.NewWriter(os.Stdout)
-			ifaces, err := dom.ListAllInterfaceAddresses(0)
-			if err == nil && len(ifaces) > 0 {
+			nics, err := rsvirt.L.DomainInterfaceAddresses(dom, 0, 0)
+			if err == nil && len(nics) > 0 {
 				var ips string
-				for n, iface := range ifaces {
+				for n, iface := range nics {
 					head = append(head, fmt.Sprintf("NIC %v", n))
 					for _, ip := range iface.Addrs {
 						ips += ip.Addr

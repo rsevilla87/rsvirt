@@ -10,12 +10,13 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test -v
+CGO=0
 
-all: build install
+all: build
 
-build: get-deps vendor
+build: get-deps vendor 
 	@echo "building ${BINARY} ${VERSION}"
-	$(GOBUILD) -ldflags "-X github.com/rsevilla87/rsvirt/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/rsevilla87/rsvirt/version.BuildDate=${BUILD_DATE}" -o bin/${BINARY}
+	CGO_ENABLED=${CGO} $(GOBUILD)  -ldflags "-X github.com/rsevilla87/rsvirt/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/rsevilla87/rsvirt/version.BuildDate=${BUILD_DATE} -s" -o bin/${BINARY}
 
 clean:
 	$(GOCLEAN)

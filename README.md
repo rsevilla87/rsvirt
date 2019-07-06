@@ -61,7 +61,7 @@ Make sure you have installed the dependencies:
 
 - `golang` 1.9 or later
 - GNU `make` 3.81 or later
-- `libvirt`headers files and libraries
+- `libvirt` headers files and libraries
 - `git`
 - `dep`
 

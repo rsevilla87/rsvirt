@@ -12,8 +12,6 @@ import (
 
 	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
 	"github.com/rsevilla87/rsvirt/libvirt/util"
-
-	libvirt "github.com/libvirt/libvirt-go"
 )
 
 func CreateVm(vm *VM) error {
@@ -62,7 +60,7 @@ func CreateVm(vm *VM) error {
 	if err != nil {
 		return err
 	}
-	_, err = rsvirt.CreateVm(xmlDef.String())
+	_, err = rsvirt.CreateDomain(xmlDef.String())
 	if err != nil {
 		return err
 	}
@@ -81,11 +79,10 @@ func prereqs(vmInfo *VM) error {
 		}
 	}
 	// Check if storage pool exists in libvirt
-	pool, err := info.CheckPool(diskInfo.PoolName)
+	poolInfo, err := info.CheckPool(diskInfo.PoolName)
 	if err != nil {
 		return err
 	}
-	poolInfo, _ := pool.GetXMLDesc(libvirt.STORAGE_XML_INACTIVE)
 	xml.Unmarshal([]byte(poolInfo), &xmlPool)
 	diskInfo.Pool = Pool{
 		Name: xmlPool.Name,
@@ -97,7 +94,7 @@ func prereqs(vmInfo *VM) error {
 		return err
 	}
 	// Check if VM name is already defined
-	_, err = rsvirt.GetVM(vmInfo.Name)
+	_, err = rsvirt.GetDomain(vmInfo.Name)
 	if err == nil {
 		return fmt.Errorf("A VM named %s is already defined", vmInfo.Name)
 	}

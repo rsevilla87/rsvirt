@@ -2,23 +2,19 @@ package util
 
 import (
 	"encoding/xml"
-
-	libvirt "github.com/libvirt/libvirt-go"
 )
 
-// VirDomainState Virtual machine status
-var VirDomainState = map[libvirt.DomainState]string{
-	libvirt.DOMAIN_NOSTATE:     "no state",
-	libvirt.DOMAIN_RUNNING:     "running",
-	libvirt.DOMAIN_BLOCKED:     "blocked",
-	libvirt.DOMAIN_PAUSED:      "paused",
-	libvirt.DOMAIN_SHUTDOWN:    "shutdown",
-	libvirt.DOMAIN_CRASHED:     "crashed",
-	libvirt.DOMAIN_PMSUSPENDED: "suspended",
-	libvirt.DOMAIN_SHUTOFF:     "shut off",
+// DomainStates domain status
+var DomainStates = []string{
+	"no state",
+	"running",
+	"blocked",
+	"paused",
+	"shutdown",
+	"shut off",
+	"crashed",
+	"suspended",
 }
-
-// TODO: Add SPICE graphic device
 
 // VMTemplate Virtual machine base template
 var VMTemplate = `<domain type='kvm'>
