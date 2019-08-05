@@ -22,7 +22,7 @@ var VMTemplate = `<domain type='kvm'>
   <memory unit='MiB'>{{.Memory}}</memory>
   <vcpu placement='static'>{{.Cpus}}</vcpu>
   <os>
-    <type arch='x86_64' machine='pc-i440fx-3.0'>hvm</type>
+    <type>hvm</type>
     <boot dev='hd'/>
     <bootmenu enable='yes'/>
   </os>
