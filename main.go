@@ -33,7 +33,7 @@ const (
 	local template
 	template="${2:-"{{ range .  }}{{ .Name }} {{ end }}"}"
 	local rsvirt_out
-	if rsvirt_out=$(rsvirt list -o template "${template}"); then
+	if rsvirt_out=$(sudo rsvirt list -o template "${template}"); then
 		COMPREPLY=( $( compgen -W "${rsvirt_out[*]}" -- "$cur" ) )
 	fi
 }
