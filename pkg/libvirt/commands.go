@@ -9,7 +9,6 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	cliutil "github.com/rsevilla87/rsvirt/cli/cli-util"
-	"github.com/rsevilla87/rsvirt/libvirt/util"
 )
 
 var L *libvirt.Libvirt
@@ -29,7 +28,8 @@ func NewConnection(uri, cType string) {
 	L = libvirt.New(c)
 	err = L.Connect()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
 
@@ -50,7 +50,7 @@ func ListDomains() ([]domain, error) {
 		}
 		domList = append(domList, domain{
 			Name:  d.Name,
-			State: util.DomainStates[state],
+			State: DomainStates[state],
 			IPs:   IPs,
 		})
 	}
@@ -88,7 +88,7 @@ func StopDomain(d string, force bool) error {
 
 // DeleteDomain Deletes a domain
 func DeleteDomain(d string) error {
-	var domain util.Domain
+	var domain Domain
 	dom, err := L.DomainLookupByName(d)
 	if err != nil {
 		return err

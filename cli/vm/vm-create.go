@@ -10,8 +10,7 @@ import (
 	"syscall"
 	"text/template"
 
-	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
-	"github.com/rsevilla87/rsvirt/libvirt/util"
+	rsvirt "github.com/rsevilla87/rsvirt/pkg/libvirt"
 )
 
 func CreateVm(vm *VM) error {
@@ -52,7 +51,7 @@ func CreateVm(vm *VM) error {
 		DeleteDisk(vm.Disks[0].Path)
 		return err
 	}
-	t, err := template.New("vm").Parse(util.VMTemplate)
+	t, err := template.New("vm").Parse(rsvirt.VMTemplate)
 	if err != nil {
 		return err
 	}
@@ -68,7 +67,7 @@ func CreateVm(vm *VM) error {
 }
 
 func prereqs(vmInfo *VM) error {
-	var xmlPool util.Pool
+	var xmlPool rsvirt.Pool
 	info := &VirtInfo
 	diskInfo := &vmInfo.Disks[0]
 	// Check if interfaces exist in libvirt

@@ -1,7 +1,7 @@
 package vm
 
 import (
-	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
+	rsvirt "github.com/rsevilla87/rsvirt/pkg/libvirt"
 )
 
 func (info *virtInfo) CheckPool(name string) (string, error) {

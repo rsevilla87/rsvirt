@@ -11,8 +11,7 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
-	"github.com/rsevilla87/rsvirt/libvirt/util"
+	rsvirt "github.com/rsevilla87/rsvirt/pkg/libvirt"
 
 	libvirt "github.com/digitalocean/go-libvirt"
 
@@ -258,7 +257,7 @@ func NewCmdSSH() *cobra.Command {
 
 func NewCmdAddDisk() *cobra.Command {
 	var format, bus string
-	var disk util.Disk
+	var disk rsvirt.Disk
 	cmd := &cobra.Command{
 		Use:   "add-disk <vm> <disk-size>",
 		Short: "Adds a disk to a Virtual Machine",
@@ -293,7 +292,7 @@ func NewCmdAddDisk() *cobra.Command {
 }
 
 func NewCmdVmInfo() *cobra.Command {
-	var domObj util.Domain
+	var domObj rsvirt.Domain
 	head := []string{"Domain", "vCPUs", "Memory"}
 	cmd := &cobra.Command{
 		Use:   "show",

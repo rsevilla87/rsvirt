@@ -21,4 +21,3 @@ systemctl enable --now httpd
 `
 $ rsvirt add-disk test-vm 10GB
 `
-

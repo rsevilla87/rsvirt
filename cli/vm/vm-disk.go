@@ -9,10 +9,8 @@ import (
 	"time"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
-
 	cliutil "github.com/rsevilla87/rsvirt/cli/cli-util"
-	"github.com/rsevilla87/rsvirt/libvirt/util"
+	rsvirt "github.com/rsevilla87/rsvirt/pkg/libvirt"
 )
 
 // QEMU_IMG qemu-img binary
@@ -59,24 +57,24 @@ func GetDiskFormat(format string) (string, error) {
 }
 
 // AddDisk Creates and attach disk device to the given domain
-func AddDisk(dom libvirt.Domain, diskSize, format, bus string) (util.Disk, error) {
+func AddDisk(dom libvirt.Domain, diskSize, format, bus string) (rsvirt.Disk, error) {
 	dXML, _ := rsvirt.L.DomainGetXMLDesc(dom, 0)
-	var d util.Domain
+	var d rsvirt.Domain
 	xml.Unmarshal([]byte(dXML), &d)
 	lastDiskPath := d.Devices.Disk[0].Source.File
 	lastDiskDev := d.Devices.Disk[len(d.Devices.Disk)-1].Target.Dev
 	diskPath := genDiskPath(lastDiskPath, format)
-	diskObj := util.Disk{
+	diskObj := rsvirt.Disk{
 		Device: "disk",
 		Type:   "file",
-		Driver: util.Driver{
+		Driver: rsvirt.Driver{
 			Name: "qemu",
 			Type: format,
 		},
-		Source: util.Source{
+		Source: rsvirt.Source{
 			File: diskPath,
 		},
-		Target: util.Target{
+		Target: rsvirt.Target{
 			Bus: bus,
 			Dev: genNextDisk(lastDiskDev),
 		},

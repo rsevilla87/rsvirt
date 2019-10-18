@@ -1,4 +1,4 @@
-package util
+package libvirt
 
 import (
 	"encoding/xml"

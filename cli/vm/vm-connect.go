@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	rsvirt "github.com/rsevilla87/rsvirt/libvirt"
+	rsvirt "github.com/rsevilla87/rsvirt/pkg/libvirt"
 )
 
 func SSH(vm, user, sshOpts string) error {
