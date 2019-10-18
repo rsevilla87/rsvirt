@@ -12,9 +12,9 @@ GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test -v
 GO_BUILD_RECIPE=GOOS=linux CGO_ENABLED=0 go build -ldflags="-X $(GO_PKG)/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X ${GO_PKG}/version.BuildDate=${BUILD_DATE}"
 
-all: build
+all: build vendor
 
-build: get-deps vendor 
+build:
 	@echo "building ${BINARY} ${VERSION}"
 	${GO_BUILD_RECIPE} -o bin/${BINARY}
 
@@ -31,24 +31,19 @@ test:
 install:
 	cp bin/${BINARY} /usr/bin/
 
-get-deps: vendor
-ifeq ($(shell command -v dep 2> /dev/null),)
-	go get -u -v github.com/golang/dep/cmd/dep
-endif
+vendor: go.sum
+	go mod vendor
 
-vendor: Gopkg.toml
-	dep ensure -v
-
-Gopkg.toml:
-	dep ensure -v
+go.sum:
+	@echo 'Usage:'
+	go mod vendor
 
 help:
 	@echo 'Management commands for rsvirt:'
 	@echo
 	@echo 'Usage:'
 	@echo '    make build           Compile the project.'
-	@echo '    make get-deps        runs dep ensure, mostly used for ci.'
-
+	@echo '    make vendor          Runs go mod vendor'
 	@echo '    make clean           Clean the directory tree.'
 	@echo
 
