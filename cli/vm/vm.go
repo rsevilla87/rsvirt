@@ -207,7 +207,7 @@ func NewCmdNewVM() *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&diskInfo.BaseImage, "image", "i", "", "Backing image")
+	flags.StringVarP(&diskInfo.BaseImage, "image", "i", "", "Backing image. URL or disk path")
 	flags.StringVarP(&diskInfo.Format, "format", "f", "qcow2", "Output format: qcow2 or raw.")
 	flags.IntVarP(&diskInfo.VirtualSize, "size", "s", 10, "Virtual size for the disk in GiB")
 	flags.IntVarP(&vmInfo.Cpus, "cpu", "c", 1, "Number of vCPUs")

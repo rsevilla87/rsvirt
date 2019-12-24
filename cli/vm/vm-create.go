@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"path"
@@ -97,11 +98,20 @@ func prereqs(vmInfo *VM) error {
 	if err == nil {
 		return fmt.Errorf("A VM named %s is already defined", vmInfo.Name)
 	}
+	// ParseRequestURI does not hang with absolute paths, so we check the URL scheme
+	if parsed, err := url.ParseRequestURI(vmInfo.Disks[0].BaseImage); err == nil && parsed.Scheme != "" {
+		fmt.Println(vmInfo.Disks[0].BaseImage)
+		diskPath := path.Join(vmInfo.Disks[0].Pool.Path, path.Base(vmInfo.Disks[0].BaseImage))
+		if err := DownloadFile(diskPath, vmInfo.Disks[0].BaseImage); err != nil {
+			return err
+		}
+		vmInfo.Disks[0].BaseImage = diskPath
+	}
 	vmDisk := path.Join(diskInfo.Pool.Path, vmInfo.Name+diskFormat)
 	// Check if destination file exists
 	_, err = os.Stat(vmDisk)
 	if os.IsExist(err) {
-		return fmt.Errorf("Destination file already exists")
+		return fmt.Errorf("Destination file %s already exists", vmDisk)
 	}
 	diskInfo.Path = vmDisk
 	return nil
