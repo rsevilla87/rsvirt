@@ -10,6 +10,5 @@ func (info *virtInfo) CheckPool(name string) (string, error) {
 		return "", err
 	}
 	poolXML, _ := rsvirt.L.StoragePoolGetXMLDesc(pool, 0)
-
 	return poolXML, nil
 }

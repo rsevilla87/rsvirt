@@ -216,7 +216,7 @@ func NewCmdNewVM() *cobra.Command {
 	flags.BoolVar(&vmInfo.CloudInit, "cloud-init", false, "Enable cloud init")
 	flags.StringVar(&vmInfo.RootPassword, "password", "", "Root password")
 	flags.StringVar(&vmInfo.SSHUser, "ssh-user", "root", "Inject given SSH public key to the given user")
-	flags.StringVar(&vmInfo.PublicKey, "public-key", "", "Public key")
+	flags.StringVar(&vmInfo.PublicKey, "public-key", os.ExpandEnv("$HOME/.ssh/id_rsa.pub"), "Public key")
 	flags.StringVar(&vmInfo.FirstBootScript, "first-boot", "", "First boot script path")
 	flags.StringSliceVar(&vmInfo.Interfaces, "nets", []string{"default"}, "List of network interfaces")
 	cmd.MarkFlagRequired("image")

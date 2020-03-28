@@ -40,7 +40,7 @@ func CreateVm(vm *VM) error {
 	}
 	if vm.PublicKey != "" {
 		if err := vm.setPK(&customArgs, vm.SSHUser, vm.PublicKey); err != nil {
-			fmt.Println(err.Error())
+			return err
 		}
 	}
 	if vm.FirstBootScript != "" {
